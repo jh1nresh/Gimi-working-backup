@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #05070d;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #f4f7fb;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 22% 24%, rgba(115, 217, 255, 0.16), transparent 34%),
+          radial-gradient(circle at 76% 16%, rgba(124, 109, 255, 0.18), transparent 32%),
+          radial-gradient(circle at 76% 84%, rgba(206, 255, 0, 0.08), transparent 28%),
+          linear-gradient(135deg, #05070d 0%, #0a0d15 48%, #111722 100%);
+      }
+      .grain {
+        position: absolute;
+        inset: 0;
+        opacity: 0.16;
+        background-image:
+          linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+        background-size: 44px 44px;
+      }
+      .nav {
+        position: absolute;
+        top: 54px;
+        left: 72px;
+        right: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 20;
+      }
+      .brand {
+        font-family: "Geist Mono", SFMono-Regular, monospace;
+        letter-spacing: 0.32em;
+        text-transform: uppercase;
+        font-size: 28px;
+      }
+      .nav-copy {
+        display: flex;
+        gap: 38px;
+        color: #8b93a3;
+        font-family: "Geist Mono", SFMono-Regular, monospace;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-size: 13px;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        padding: 130px 90px 86px;
+        display: grid;
+        grid-template-columns: 0.86fr 1.14fr;
+        gap: 72px;
+        align-items: center;
+      }
+      .scene.center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        gap: 34px;
+        padding: 130px 170px 90px;
+      }
+      .eyebrow {
+        font-family: "Geist Mono", SFMono-Regular, monospace;
+        color: #ceff00;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        font-size: 17px;
+        margin-bottom: 22px;
+      }
+      .headline {
+        font-size: 92px;
+        line-height: 0.93;
+        letter-spacing: -0.06em;
+        max-width: 760px;
+      }
+      .headline.centered {
+        max-width: 1040px;
+        font-size: 104px;
+      }
+      .body {
+        margin-top: 30px;
+        max-width: 720px;
+        font-size: 30px;
+        line-height: 1.28;
+        color: #c5cad6;
+      }
+      .orb-wrap {
+        position: relative;
+        width: 620px;
+        height: 620px;
+        display: grid;
+        place-items: center;
+      }
+      .orb {
+        width: 430px;
+        height: 430px;
+        border-radius: 999px;
+        background:
+          radial-gradient(circle at 44% 43%, rgba(244, 247, 251, 0.95) 0 2%, transparent 4%),
+          radial-gradient(circle at 44% 42%, rgba(115, 217, 255, 0.9), rgba(124, 109, 255, 0.54) 34%, rgba(206, 255, 0, 0.14) 58%, transparent 72%);
+        filter: drop-shadow(0 0 70px rgba(115, 217, 255, 0.42)) drop-shadow(0 0 120px rgba(124, 109, 255, 0.25));
+        box-shadow: inset 0 0 70px rgba(255,255,255,0.16);
+      }
+      .ring {
+        position: absolute;
+        inset: 58px;
+        border: 1px solid rgba(244,247,251,0.12);
+        border-radius: 999px;
+      }
+      .particle {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: #bcecff;
+        opacity: 0.6;
+      }
+      .phone {
+        position: relative;
+        width: 740px;
+        height: 820px;
+        border: 1px solid rgba(244,247,251,0.15);
+        border-radius: 48px;
+        background: rgba(17, 23, 34, 0.72);
+        box-shadow: 0 42px 120px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.08);
+        overflow: hidden;
+        backdrop-filter: blur(24px);
+      }
+      .phone-top {
+        display: flex;
+        justify-content: space-between;
+        padding: 34px 38px 0;
+        font-family: "Geist Mono", SFMono-Regular, monospace;
+        color: #8b93a3;
+        font-size: 13px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .phone-main {
+        padding: 42px 50px;
+      }
+      .chat {
+        margin-top: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 78px;
+        border: 1px solid rgba(244,247,251,0.12);
+        border-radius: 999px;
+        background: rgba(240, 242, 247, 0.08);
+        padding: 0 18px 0 30px;
+        color: #c5cad6;
+        font-size: 23px;
+      }
+      .mic, .arrow {
+        width: 52px;
+        height: 52px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: #ceff00;
+        color: #071018;
+        font-weight: 900;
+      }
+      .result-card, .detail-card, .profile-card, .listing-card {
+        border: 1px solid rgba(244,247,251,0.12);
+        border-radius: 30px;
+        background: rgba(240, 242, 247, 0.08);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+      }
+      .result-card {
+        margin-top: 34px;
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 28px;
+        padding: 26px;
+      }
+      .product-photo {
+        height: 190px;
+        border-radius: 28px;
+        display: grid;
+        place-items: center;
+        font-size: 88px;
+        background: radial-gradient(circle at 52% 46%, rgba(115,217,255,0.32), rgba(124,109,255,0.2), transparent 70%);
+      }
+      .product-title {
+        font-size: 34px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+      .meta {
+        margin-top: 10px;
+        color: #8b93a3;
+        font-size: 19px;
+      }
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 24px;
+      }
+      .metric {
+        border-radius: 18px;
+        background: rgba(0,0,0,0.22);
+        padding: 15px;
+      }
+      .metric strong {
+        display: block;
+        font-size: 25px;
+        margin-bottom: 6px;
+      }
+      .metric span {
+        color: #8b93a3;
+        font-family: "Geist Mono", SFMono-Regular, monospace;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .cta {
+        margin-top: 28px;
+        height: 66px;
+        border-radius: 999px;
+        background: #ceff00;
+        color: #071018;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        font-size: 21px;
+        font-weight: 850;
+      }
+      .stack {
+        display: grid;
+        gap: 20px;
+      }
+      .profile-card, .listing-card {
+        padding: 28px;
+      }
+      .tabbar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        border-radius: 999px;
+        padding: 6px;
+        background: rgba(0,0,0,0.22);
+        margin-bottom: 24px;
+      }
+      .tab {
+        border-radius: 999px;
+        padding: 14px 0;
+        text-align: center;
+        color: #8b93a3;
+        font-weight: 700;
+      }
+      .tab.active {
+        background: rgba(244,247,251,0.13);
+        color: #f4f7fb;
+      }
+      .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 20px;
+      }
+      .detail-card {
+        padding: 18px;
+      }
+      .detail-card span {
+        display: block;
+        color: #8b93a3;
+        font-family: "Geist Mono", SFMono-Regular, monospace;
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      .detail-card strong {
+        font-size: 22px;
+      }
+      .two-buttons {
+        display: grid;
+        grid-template-columns: 1fr 0.82fr;
+        gap: 14px;
+        margin-top: 22px;
+      }
+      .button {
+        height: 62px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: #ceff00;
+        color: #071018;
+        font-weight: 850;
+        font-size: 19px;
+      }
+      .button.secondary {
+        background: rgba(244,247,251,0.11);
+        color: #f4f7fb;
+        border: 1px solid rgba(244,247,251,0.13);
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .field {
+        min-height: 64px;
+        border-radius: 18px;
+        padding: 14px 16px;
+        background: rgba(0,0,0,0.22);
+      }
+      .field span {
+        display: block;
+        color: #8b93a3;
+        font-family: "Geist Mono", SFMono-Regular, monospace;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+      .field strong { font-size: 19px; }
+      .wide { grid-column: 1 / -1; }
+      .caption {
+        position: absolute;
+        left: 50%;
+        bottom: 46px;
+        transform: translateX(-50%);
+        width: 1280px;
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #f4f7fb;
+        font-size: 31px;
+        line-height: 1.25;
+        padding: 18px 42px;
+        border: 1px solid rgba(244,247,251,0.12);
+        border-radius: 999px;
+        background: rgba(5,7,13,0.66);
+        backdrop-filter: blur(16px);
+        z-index: 30;
+      }
+      .chipline {
+        margin-top: 26px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .chip {
+        border-radius: 999px;
+        padding: 12px 18px;
+        border: 1px solid rgba(244,247,251,0.12);
+        color: #c5cad6;
+        background: rgba(244,247,251,0.07);
+        font-weight: 700;
+      }
+      .chain {
+        display: grid;
+        gap: 18px;
+      }
+      .chain-step {
+        border-left: 4px solid #ceff00;
+        padding: 16px 20px;
+        border-radius: 20px;
+        background: rgba(240, 242, 247, 0.08);
+        font-size: 25px;
+        color: #c5cad6;
+      }
+      .chain-step strong { color: #f4f7fb; }
+      .scene, .caption { opacity: 0; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="136"
+      data-width="1920"
+      data-height="1080"
+    >
+      <audio id="narration" data-start="0" data-duration="135.03" data-track-index="0" src="assets/narration.wav" data-volume="1"></audio>
+      <div class="grain"></div>
+      <div class="nav">
+        <div class="brand">GIMI</div>
+        <div class="nav-copy"><span>Agent rentals</span><span>Solana escrow</span><span>Voice commerce</span></div>
+      </div>
+
+      <section class="scene center" id="s1">
+        <div class="orb-wrap" id="heroOrb"><div class="ring"></div><div class="orb"></div></div>
+        <div>
+          <div class="eyebrow">Agentic rental commerce</div>
+          <div class="headline centered">Rent anything nearby with an agent.</div>
+          <div class="body" style="margin-left:auto;margin-right:auto;">Ask for what you need. Gimi finds it, prepares checkout, escrows payment, and records the outcome.</div>
+        </div>
+      </section>
+
+      <section class="scene" id="s2">
+        <div>
+          <div class="eyebrow">Ask naturally</div>
+          <div class="headline">Voice-first local inventory.</div>
+          <div class="body">The renter asks for a camera kit near campus for four hours. Gimi turns that request into search, matching, and checkout.</div>
+          <div class="chipline"><div class="chip">near campus</div><div class="chip">4 hours</div><div class="chip">camera kit</div></div>
+        </div>
+        <div class="phone">
+          <div class="phone-top"><span>Gimi agent</span><span>online</span></div>
+          <div class="phone-main">
+            <div class="orb-wrap" style="width:100%;height:260px;"><div class="ring" style="inset:20px;"></div><div class="orb" style="width:190px;height:190px;"></div></div>
+            <div class="chat"><span>I need a camera kit for 4 hours near campus</span><div class="mic">●</div></div>
+            <div class="result-card">
+              <div class="product-photo">📷</div>
+              <div>
+                <div class="product-title">Mirrorless Camera #04</div>
+                <div class="meta">Photo Desk · 0.8 mi · 98% match</div>
+                <div class="metric-row"><div class="metric"><strong>4h</strong><span>Duration</span></div><div class="metric"><strong>$24</strong><span>Rent</span></div><div class="metric"><strong>$420</strong><span>Escrow</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene" id="s3">
+        <div>
+          <div class="eyebrow">Checkout is an action</div>
+          <div class="headline">Not just a chat answer.</div>
+          <div class="body">Gimi prepares terms, serializes a Solana devnet transaction, then asks the renter wallet to approve. The agent never signs for the user.</div>
+        </div>
+        <div class="phone">
+          <div class="phone-top"><span>Rental checkout</span><span>Devnet</span></div>
+          <div class="phone-main">
+            <div class="result-card">
+              <div class="product-photo">📷</div>
+              <div>
+                <div class="product-title">Mirrorless Camera #04</div>
+                <div class="meta">Pickup: Studio corner · Return by 5:49 PM</div>
+                <div class="metric-row"><div class="metric"><strong>4h</strong><span>Borrow for</span></div><div class="metric"><strong>$24</strong><span>Fee est.</span></div><div class="metric"><strong>$396</strong><span>Refund est.</span></div></div>
+                <div class="cta">Start rental with Privy →</div>
+              </div>
+            </div>
+            <div class="chain" style="margin-top:28px;">
+              <div class="chain-step"><strong>start_rental</strong> locks escrow</div>
+              <div class="chain-step"><strong>rental token</strong> tracks active session</div>
+              <div class="chain-step"><strong>receipt</strong> persists outcome</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene" id="s4">
+        <div>
+          <div class="eyebrow">Owner view</div>
+          <div class="headline">Hosts see active lending.</div>
+          <div class="body">The host sees the renter, pickup, due time, escrow locked, and accrued rent. Return settlement is a wallet-approved owner action.</div>
+        </div>
+        <div class="phone">
+          <div class="phone-top"><span>Your rentals</span><span>FGPT...YJW3</span></div>
+          <div class="phone-main">
+            <div class="tabbar"><div class="tab">Borrowing now</div><div class="tab active">Lending now</div><div class="tab">List item</div></div>
+            <div class="profile-card">
+              <div class="product-title">Mirrorless Camera #04</div>
+              <div class="meta">Lending · renter 7RKT...9Q2A</div>
+              <div class="detail-grid">
+                <div class="detail-card"><span>Pickup</span><strong>Studio corner</strong></div>
+                <div class="detail-card"><span>Due</span><strong>5:49 PM</strong></div>
+                <div class="detail-card"><span>Escrow</span><strong>420 USDC</strong></div>
+                <div class="detail-card"><span>Accrued rent</span><strong>24 USDC</strong></div>
+              </div>
+              <div class="two-buttons"><div class="button">Confirm return</div><div class="button secondary">Auto-buyout</div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene" id="s5">
+        <div>
+          <div class="eyebrow">Inventory supply</div>
+          <div class="headline">Owners can list items too.</div>
+          <div class="body">The same profile includes List item. Owner signs initialize_item, Gimi verifies the item account, then publishes it into renter inventory.</div>
+        </div>
+        <div class="phone">
+          <div class="phone-top"><span>List item</span><span>Owner wallet</span></div>
+          <div class="phone-main">
+            <div class="tabbar"><div class="tab">Borrowing now</div><div class="tab">Lending now</div><div class="tab active">List item</div></div>
+            <div class="listing-card">
+              <div class="form-grid">
+                <div class="field"><span>Item</span><strong>Anker Power Bank</strong></div>
+                <div class="field"><span>Pickup</span><strong>Library desk</strong></div>
+                <div class="field"><span>Rate / hour</span><strong>2 USDC</strong></div>
+                <div class="field"><span>Escrow cap</span><strong>30 USDC</strong></div>
+                <div class="field wide"><span>Included</span><strong>USB-C cable · 20K battery</strong></div>
+              </div>
+              <div class="cta">Initialize item on devnet →</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene" id="s6">
+        <div>
+          <div class="eyebrow">ElevenLabs layer</div>
+          <div class="headline">Voice becomes checkout.</div>
+          <div class="body">ElevenLabs gives Gimi a natural voice interface. The user can speak, the agent can search and prepare the action, but final signing stays in the wallet.</div>
+        </div>
+        <div class="phone">
+          <div class="phone-top"><span>Voice session</span><span>ElevenLabs</span></div>
+          <div class="phone-main">
+            <div class="chat"><span>I need a power bank for 3 hours near the library</span><div class="mic">●</div></div>
+            <div class="result-card">
+              <div class="product-photo">🔋</div>
+              <div>
+                <div class="product-title">Anker Power Bank #18</div>
+                <div class="meta">Library desk · 3h · escrow protected</div>
+                <div class="cta">Prepare checkout →</div>
+              </div>
+            </div>
+            <div class="chain" style="margin-top:28px;">
+              <div class="chain-step"><strong>Agent:</strong> search, explain, prepare</div>
+              <div class="chain-step"><strong>Wallet:</strong> approve, sign, execute</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene center" id="s7">
+        <div class="orb-wrap"><div class="ring"></div><div class="orb"></div></div>
+        <div>
+          <div class="eyebrow">Complete MVP loop</div>
+          <div class="headline centered">Ask. Rent. Return. Receipt.</div>
+          <div class="body" style="margin-left:auto;margin-right:auto;">Gimi turns local inventory into trusted, on-chain, agent-assisted commerce.</div>
+        </div>
+      </section>
+
+      <div class="caption" id="caption"></div>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+
+      const root = document.getElementById("root");
+      for (let i = 0; i < 72; i += 1) {
+        const dot = document.createElement("div");
+        dot.className = "particle";
+        const angle = i * 2.399963;
+        const radius = 180 + ((i * 37) % 250);
+        dot.style.left = `${960 + Math.cos(angle) * radius}px`;
+        dot.style.top = `${540 + Math.sin(angle) * radius * 0.62}px`;
+        dot.style.opacity = `${0.18 + ((i * 13) % 40) / 100}`;
+        root.appendChild(dot);
+      }
+
+      const tl = gsap.timeline({ paused: true, defaults: { ease: "power3.out" } });
+      const scenes = ["#s1", "#s2", "#s3", "#s4", "#s5", "#s6", "#s7"];
+      const starts = [0, 13, 32, 53, 76, 99, 120];
+      const durations = [12, 18, 20, 22, 21, 20, 15];
+      const captions = [
+        "Gimi is an agentic rental marketplace for the real world.",
+        "Ask naturally. Gimi searches nearby inventory and opens the best rental checkout.",
+        "Checkout is a real wallet action: escrow, rental session, and receipt state.",
+        "The owner sees active lending and can confirm return or auto-buyout.",
+        "Owners can list inventory with an initialize_item transaction.",
+        "ElevenLabs turns voice into the same agent search and checkout flow.",
+        "Gimi is trusted, on-chain, agent-assisted rental commerce."
+      ];
+
+      gsap.set(".scene", { opacity: 0, y: 26, scale: 0.985 });
+      gsap.set("#caption", { opacity: 0, y: 22 });
+      gsap.set(".particle", { scale: 0.8 });
+
+      tl.to(".particle", { rotation: 20, x: 18, y: -14, duration: 136, ease: "none", stagger: { each: 0.01, from: "center" } }, 0);
+      tl.to(".orb", { scale: 1.07, duration: 4, repeat: 33, yoyo: true, ease: "sine.inOut" }, 0);
+      tl.to(".ring", { scale: 1.06, opacity: 0.55, duration: 4, repeat: 33, yoyo: true, ease: "sine.inOut" }, 0);
+
+      scenes.forEach((scene, index) => {
+        const start = starts[index];
+        const duration = durations[index];
+        const sceneEl = document.querySelector(scene);
+        tl.to(scene, { opacity: 1, y: 0, scale: 1, duration: 0.85 }, start);
+        tl.to("#caption", { opacity: 0, y: 20, duration: 0.2, overwrite: "auto" }, start);
+        tl.set("#caption", { textContent: captions[index] }, start + 0.2);
+        tl.to("#caption", { opacity: 1, y: 0, duration: 0.55, overwrite: "auto" }, start + 0.25);
+        tl.from(`${scene} .eyebrow`, { opacity: 0, y: 18, duration: 0.55 }, start + 0.2);
+        tl.from(`${scene} .headline`, { opacity: 0, y: 34, duration: 0.7 }, start + 0.35);
+        tl.from(`${scene} .body`, { opacity: 0, y: 24, duration: 0.65 }, start + 0.55);
+        if (sceneEl.querySelector(".phone")) {
+          tl.from(`${scene} .phone`, { opacity: 0, x: 60, scale: 0.96, duration: 0.85 }, start + 0.45);
+        }
+        const staged = `${scene} .result-card, ${scene} .profile-card, ${scene} .listing-card, ${scene} .chain-step`;
+        if (sceneEl.querySelector(".result-card, .profile-card, .listing-card, .chain-step")) {
+          tl.from(staged, { opacity: 0, y: 28, duration: 0.55, stagger: 0.08 }, start + 1.2);
+        }
+        tl.to(scene, { opacity: 0, y: -22, scale: 1.01, duration: 0.55 }, start + duration);
+      });
+      tl.to("#caption", { opacity: 0, y: 18, duration: 0.55 }, 135);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

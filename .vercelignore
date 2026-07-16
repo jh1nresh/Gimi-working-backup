@@ -1,0 +1,9 @@
+.anchor
+.git
+.next
+node_modules
+target
+test-ledger
+coverage
+.env*
+*.tsbuildinfo

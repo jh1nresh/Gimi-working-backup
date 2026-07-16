@@ -1,0 +1,4932 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gimi</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg:       #07080c;
+    --ink:      #f0f2f7;
+    --ink-2:    rgba(240, 242, 247, 0.62);
+    --ink-3:    rgba(240, 242, 247, 0.36);
+    --ink-4:    rgba(240, 242, 247, 0.18);
+    --hairline: rgba(240, 242, 247, 0.09);
+
+    --accent:      #b5e4ff;
+
+    --glass:        rgba(240, 242, 247, 0.045);
+    --glass-edge:   rgba(240, 242, 247, 0.10);
+    --glass-edge-h: rgba(240, 242, 247, 0.18);
+
+    --ease:      cubic-bezier(.22, 1, .36, 1);
+    --ease-back: cubic-bezier(.34, 1.56, .64, 1);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: 'Geist', -apple-system, system-ui, sans-serif;
+    background: #03040a;
+    color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; padding: 24px;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .stage {
+    position: fixed; inset: 0; z-index: 0;
+    background:
+      radial-gradient(ellipse 50% 40% at 18% 12%, rgba(255, 168, 132, 0.06), transparent 60%),
+      radial-gradient(ellipse 50% 40% at 85% 88%, rgba(143, 164, 255, 0.07), transparent 60%),
+      linear-gradient(180deg, #06070c 0%, #03040a 50%, #06070c 100%);
+  }
+
+  .phone {
+    position: relative; z-index: 1;
+    width: 392px; height: 832px;
+    border-radius: 56px;
+    background: linear-gradient(180deg, #0a0c14 0%, #03040a 100%);
+    padding: 12px;
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,0.05),
+      inset 0 0 0 2px rgba(0,0,0,0.45),
+      0 60px 140px rgba(0,0,0,0.75),
+      0 0 0 8px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .screen {
+    position: relative;
+    width: 100%; height: 100%;
+    border-radius: 44px;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 100% 60% at 50% 10%, rgba(181, 228, 255, 0.05), transparent 60%),
+      var(--bg);
+    isolation: isolate;
+    display: flex; flex-direction: column;
+  }
+
+  .island {
+    position: absolute; top: 11px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 34px; border-radius: 20px;
+    background: #000;
+    z-index: 30;
+  }
+  .status-bar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 30px 0 30px;
+    font-size: 15px; font-weight: 600;
+    color: var(--ink);
+  }
+  .status-bar .icons { display: flex; gap: 5px; align-items: center; opacity: 0.95; }
+  .home-indicator {
+    position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 134px; height: 5px; border-radius: 100px;
+    background: rgba(240, 242, 247, 0.4);
+    z-index: 30;
+  }
+
+  /* streak overlay — sits above content, comets fly here */
+  .streak-layer {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 11;
+  }
+  .streak {
+    position: absolute;
+    width: 14px; height: 14px;
+    margin-left: -7px; margin-top: -7px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, var(--col, var(--accent)) 35%, transparent 75%);
+    box-shadow:
+      0 0 18px var(--col, var(--accent)),
+      0 0 40px var(--col, var(--accent));
+    will-change: transform, opacity;
+  }
+
+  /* ─── top section ─── */
+  .top {
+    position: relative;
+    padding: 56px 22px 0;
+    flex: 0 0 auto;
+  }
+
+  /* greeting */
+  .greeting {
+    text-align: center;
+    padding: 12px 6px 2px;
+  }
+  .brand {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px; letter-spacing: 0.36em; text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 10px;
+  }
+  .headline {
+    font-size: 22px; font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1.15;
+    margin-bottom: 6px;
+  }
+  .subline {
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+  }
+  .subline .otto-name { color: var(--ink); font-weight: 500; }
+
+  /* Oracle */
+  .oracle-wrap {
+    position: relative;
+    width: 100%; height: 210px;
+    margin: 4px 0 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .oracle-wrap canvas {
+    position: absolute;
+    width: 260px; height: 260px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  /* speech */
+  .speech {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    margin: 0 8px;
+    transition: max-height .4s var(--ease), opacity .35s var(--ease);
+  }
+  body:not([data-state="idle"]) .speech { max-height: 70px; opacity: 1; }
+  .speech-inner {
+    padding: 6px 12px 4px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.35;
+  }
+  .speech-inner .label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.20em; text-transform: uppercase;
+    color: var(--ink-3);
+    margin-right: 8px;
+  }
+  .speech-inner .label .dot {
+    display: inline-block;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 5px;
+    vertical-align: 1px;
+    animation: pulse 1.2s var(--ease) infinite;
+  }
+  body[data-state="responding"] .speech-inner .label .dot { animation: none; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.5); opacity: 0.45; }
+  }
+  .speech-inner .body { color: var(--ink); }
+  .speech-inner .body .glow { color: var(--accent); }
+  .speech-inner .body .warn { color: rgba(255, 190, 132, 0.95); }
+
+  .hint {
+    text-align: center;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-3);
+    padding: 8px 0 6px;
+    transition: opacity .3s var(--ease);
+  }
+  body:not([data-state="idle"]) .hint { opacity: 0; height: 0; padding: 0; }
+
+  .chat-bar {
+    margin: 10px 0 0;
+    display: flex; align-items: center; gap: 10px;
+    padding: 5px 6px 5px 16px;
+    border-radius: 100px;
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      0 4px 24px rgba(0, 0, 0, 0.3);
+    transition: border-color .25s var(--ease);
+  }
+  .chat-bar:focus-within { border-color: var(--glass-edge-h); }
+  .chat-input {
+    flex: 1;
+    background: none; border: none; outline: none;
+    color: var(--ink);
+    font-family: 'Geist', sans-serif;
+    font-size: 14.5px;
+    padding: 9px 0;
+    letter-spacing: -0.005em;
+  }
+  .chat-input::placeholder { color: var(--ink-3); }
+  .chat-mic {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(240, 242, 247, 0.08);
+    color: var(--ink);
+    transition: all .2s var(--ease);
+  }
+  .chat-mic:hover { background: rgba(240, 242, 247, 0.14); }
+  .chat-mic:active { transform: scale(0.94); }
+  .chat-mic.is-loading {
+    cursor: wait;
+    color: var(--accent);
+  }
+  .chat-mic.is-live {
+    color: #061015;
+    background: var(--accent);
+    box-shadow:
+      0 0 0 6px rgba(181, 228, 255, 0.10),
+      0 0 34px rgba(181, 228, 255, 0.42);
+  }
+  .chat-mic.is-live svg {
+    animation: micPulse 1.1s var(--ease) infinite;
+  }
+  @keyframes micPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.86); }
+  }
+
+  /* chips */
+  .chips-block { margin: 14px -22px 0; padding: 0 22px; }
+  .chips-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px; letter-spacing: 0.32em; text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+  .chips {
+    display: flex; gap: 7px;
+    overflow-x: auto;
+    padding: 1px 0 6px;
+    scrollbar-width: none;
+  }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex: 0 0 auto;
+    padding: 7px 13px;
+    border-radius: 100px;
+    background: transparent;
+    border: 1px solid var(--hairline);
+    color: var(--ink-2);
+    font-size: 12.5px; font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all .2s var(--ease);
+  }
+  .chip:hover { border-color: var(--glass-edge); color: var(--ink); }
+  .chip:active { transform: scale(0.96); }
+
+  /* ─── catalog (real-photo ready) ─── */
+  .catalog-scroll {
+    position: relative;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 22px;
+    scrollbar-width: none;
+    mask-image: linear-gradient(180deg, transparent 0, #000 14px, #000 calc(100% - 30px), transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14px, #000 calc(100% - 30px), transparent 100%);
+  }
+  .catalog-scroll::-webkit-scrollbar { display: none; }
+  .section-head {
+    margin: 22px 2px 16px;
+    display: flex; align-items: baseline; justify-content: space-between;
+  }
+  .section-head .title {
+    font-size: 16px; font-weight: 500;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+  }
+  .section-head .meta {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.20em; text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  .catalog {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 26px 18px;
+    padding-bottom: 80px;
+  }
+  .specimen {
+    text-align: center;
+    cursor: pointer;
+    padding: 2px;
+    transition: opacity .3s var(--ease);
+  }
+  .specimen.fade { opacity: 0.22; }
+
+  /* photo container — works for emoji placeholder OR real product photo */
+  .photo-wrap {
+    position: relative;
+    width: 100px; height: 100px;
+    margin: 0 auto 10px;
+  }
+  .photo-glow {
+    position: absolute; inset: -6px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 55%,
+        hsla(var(--h1), 95%, 65%, 0.5) 0%,
+        hsla(var(--h2), 80%, 55%, 0.30) 35%,
+        transparent 65%);
+    filter: blur(8px);
+    opacity: 0.7;
+    transition: opacity .4s var(--ease), filter .4s var(--ease), transform .5s var(--ease-back);
+  }
+  .photo {
+    position: absolute; inset: 8px;
+    display: flex; align-items: center; justify-content: center;
+    /* Plug-in slot — replace emoji content with <img src="…"/> for real product photos */
+    font-size: 42px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+    z-index: 2;
+    transition: transform .5s var(--ease-back);
+  }
+  .photo img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+
+  .specimen:hover .photo { transform: translateY(-2px) scale(1.04); }
+  .specimen:hover .photo-glow { transform: scale(1.08); opacity: 0.9; }
+
+  .specimen.match .photo-glow {
+    opacity: 1;
+    filter: blur(10px);
+    animation: matchGlow 2s var(--ease) infinite;
+  }
+  .specimen.match .photo {
+    animation: matchPop 2s var(--ease) infinite;
+  }
+  @keyframes matchGlow {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.1); }
+  }
+  @keyframes matchPop {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+  }
+
+  /* the brief "arrival" flash when streak lands */
+  .specimen.arriving .photo-glow { animation: arrivalFlash .7s var(--ease); }
+  @keyframes arrivalFlash {
+    0%   { opacity: 0.5; transform: scale(0.7); filter: blur(2px); }
+    40%  { opacity: 1.2; transform: scale(1.4); filter: blur(14px); }
+    100% { opacity: 1;   transform: scale(1);   filter: blur(10px); }
+  }
+
+  .specimen .name {
+    font-size: 12.5px; font-weight: 500;
+    color: var(--ink);
+    line-height: 1.25;
+    letter-spacing: -0.005em;
+  }
+  .specimen .spec {
+    font-size: 11.5px;
+    color: var(--ink-3);
+    margin-top: 3px;
+    letter-spacing: -0.005em;
+  }
+  .specimen .spec .price { color: var(--ink); font-weight: 500; }
+
+  .when-idle, .when-listening, .when-processing, .when-responding { display: none; }
+  body[data-state="idle"]       .when-idle       { display: inline; }
+  body[data-state="listening"]  .when-listening  { display: inline; }
+  body[data-state="processing"] .when-processing { display: inline; }
+  body[data-state="responding"] .when-responding { display: inline; }
+
+  .word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(3px);
+    animation: wordIn .3s var(--ease) forwards;
+  }
+  @keyframes wordIn { to { opacity: 1; transform: none; } }
+
+  /* ─── item detail bottom sheet ─── */
+  .sheet-backdrop {
+    position: absolute; inset: 0;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s var(--ease);
+    z-index: 40;
+  }
+  .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+
+  .item-sheet {
+    position: absolute;
+    left: 10px; right: 10px;
+    bottom: 10px;
+    height: calc(100% - 84px);
+    border-radius: 36px;
+    background: rgba(16, 18, 26, 0.94);
+    -webkit-backdrop-filter: blur(40px) saturate(180%);
+    backdrop-filter: blur(40px) saturate(180%);
+    border: 1px solid var(--glass-edge);
+    transform: translateY(110%);
+    transition: transform .42s var(--ease-back);
+    z-index: 70;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+    box-shadow: 0 -30px 80px rgba(0, 0, 0, 0.4);
+  }
+  .item-sheet.open { transform: translateY(0); }
+
+  .sheet-handle {
+    width: 38px; height: 4px; border-radius: 10px;
+    background: rgba(240, 242, 247, 0.22);
+    margin: 12px auto 4px;
+    flex: 0 0 auto;
+  }
+
+  .sheet-close {
+    position: absolute;
+    top: 18px; right: 18px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(240, 242, 247, 0.08);
+    border: 1px solid var(--hairline);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--ink-2);
+    z-index: 3;
+    padding: 0;
+    transition: background .2s var(--ease);
+  }
+  .sheet-close:hover { background: rgba(240, 242, 247, 0.14); }
+  .sheet-close:active { transform: scale(0.93); }
+
+  .sheet-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 20px 32px 0;
+    text-align: center;
+    scrollbar-width: none;
+  }
+  .sheet-content::-webkit-scrollbar { display: none; }
+
+  .sheet-hero {
+    position: relative;
+    width: 188px; height: 188px;
+    margin: 10px auto 20px;
+  }
+  .sheet-hero-glow {
+    position: absolute; inset: -24px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 55%,
+        hsla(var(--h1), 95%, 65%, 0.55) 0%,
+        hsla(var(--h2), 80%, 55%, 0.32) 40%,
+        transparent 70%);
+    filter: blur(18px);
+    opacity: 0.95;
+  }
+  .sheet-hero-photo {
+    position: absolute; inset: 30px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 86px;
+    filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));
+    z-index: 2;
+  }
+
+  .sheet-name {
+    font-size: 25px; font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .sheet-meta {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: 22px;
+  }
+
+  .sheet-price-row {
+    display: flex; align-items: baseline; justify-content: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .sheet-price {
+    font-size: 34px; font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.025em;
+    line-height: 1;
+  }
+  .sheet-price-unit {
+    font-size: 15px; color: var(--ink-3);
+    font-weight: 400;
+    letter-spacing: -0.005em;
+  }
+  .sheet-availability {
+    font-size: 13px;
+    color: var(--ink-2);
+    margin-bottom: 8px;
+  }
+  .sheet-availability .dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #6bd49b;
+    margin-right: 7px;
+    vertical-align: 1px;
+  }
+  .rental-length {
+    margin: 18px 0 2px;
+    text-align: left;
+  }
+  .rental-length-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .rental-length-total {
+    color: var(--ink-2);
+    white-space: nowrap;
+  }
+  .duration-options {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .duration-option {
+    min-height: 42px;
+    border: 1px solid rgba(240, 242, 247, 0.12);
+    border-radius: 14px;
+    background: rgba(240, 242, 247, 0.075);
+    color: var(--ink-2);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 550;
+    cursor: pointer;
+    transition: border-color .18s var(--ease), background .18s var(--ease), color .18s var(--ease);
+  }
+  .duration-option.is-selected {
+    border-color: rgba(205, 255, 0, 0.78);
+    background: rgba(205, 255, 0, 0.16);
+    color: var(--ink);
+  }
+  .payment-router {
+    margin: 16px 0 4px;
+    text-align: left;
+  }
+  .payment-router-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .payment-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .payment-option {
+    min-height: 56px;
+    border: 1px solid rgba(240, 242, 247, 0.12);
+    border-radius: 16px;
+    background: rgba(240, 242, 247, 0.07);
+    color: var(--ink-2);
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    padding: 10px 12px;
+    transition: border-color .18s var(--ease), background .18s var(--ease), color .18s var(--ease);
+  }
+  .payment-option strong {
+    display: block;
+    font-size: 13px;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .payment-option span {
+    display: block;
+    font-size: 10px;
+    color: var(--ink-3);
+  }
+  .payment-option.is-selected {
+    border-color: rgba(205, 255, 0, 0.78);
+    background: rgba(205, 255, 0, 0.14);
+  }
+
+  .sheet-cta {
+    flex: 0 0 auto;
+    padding: 18px 28px 24px;
+    background: linear-gradient(180deg,
+      rgba(16, 18, 26, 0) 0%,
+      rgba(16, 18, 26, 0.92) 30%,
+      rgba(16, 18, 26, 1) 100%);
+  }
+  .sheet-cta-btn {
+    width: 100%;
+    min-height: 56px;
+    padding: 0 18px;
+    border-radius: 100px;
+    border: none;
+    background: var(--ink);
+    color: #0a0c14;
+    font-family: inherit;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    letter-spacing: -0.005em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .15s var(--ease), opacity .2s var(--ease);
+  }
+  .sheet-cta-btn:active { transform: scale(0.97); opacity: 0.9; }
+  .sheet-cta-sub {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  /* similar items rail */
+  .sheet-divider {
+    height: 1px;
+    background: var(--hairline);
+    margin: 28px -32px 22px;
+  }
+  .sheet-similar-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: left;
+    margin: 0 2px 16px;
+  }
+  .sheet-similar-row {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    margin: 0 -32px;
+    padding: 4px 32px 22px;
+    scrollbar-width: none;
+  }
+  .sheet-similar-row::-webkit-scrollbar { display: none; }
+
+  .profile-sheet .sheet-content {
+    text-align: left;
+    padding-bottom: 20px;
+  }
+  .profile-title {
+    margin: 22px 0 8px;
+    color: var(--ink);
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    text-align: center;
+  }
+  .profile-wallet {
+    margin-bottom: 22px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    text-align: center;
+  }
+  .profile-evidence {
+    margin: 0 0 18px;
+    border-top: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    padding: 14px 2px;
+  }
+  .profile-evidence-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .profile-evidence-title {
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 650;
+  }
+  .profile-evidence-copy {
+    color: var(--ink-3);
+    font-size: 11px;
+    line-height: 1.45;
+  }
+  .profile-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .profile-evidence-stat {
+    border-left: 1px solid var(--hairline);
+    padding-left: 10px;
+  }
+  .profile-evidence-stat:first-child {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .profile-evidence-stat strong,
+  .profile-evidence-stat span {
+    display: block;
+  }
+  .profile-evidence-stat strong {
+    color: var(--ink);
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+  }
+  .profile-evidence-stat span {
+    margin-top: 3px;
+    color: var(--ink-3);
+    font-family: 'Geist Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+  .profile-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin: 0 0 20px;
+    padding: 5px;
+    border: 1px solid rgba(240, 242, 247, 0.1);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.16);
+  }
+  .profile-tab {
+    border: 0;
+    border-radius: 999px;
+    padding: 11px 10px;
+    color: var(--ink-3);
+    background: transparent;
+    font: 600 12px/1 'Inter', sans-serif;
+    cursor: pointer;
+    transition: color .2s var(--ease), background .2s var(--ease), box-shadow .2s var(--ease);
+  }
+  .profile-tab.is-active {
+    color: var(--ink);
+    background: rgba(240, 242, 247, 0.12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  .profile-pane {
+    display: none;
+  }
+  .profile-pane.is-active {
+    display: block;
+  }
+  .profile-status {
+    display: none;
+    margin: 0 0 14px;
+    border: 1px solid rgba(244, 224, 143, 0.18);
+    border-radius: 16px;
+    background: rgba(244, 224, 143, 0.08);
+    padding: 11px 13px;
+    color: var(--ink-2);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+  .profile-status.is-visible {
+    display: block;
+  }
+  .profile-status.is-error {
+    border-color: rgba(255, 143, 143, 0.22);
+    background: rgba(255, 143, 143, 0.08);
+    color: #ffb8b8;
+  }
+  .profile-status.is-success {
+    border-color: rgba(107, 212, 155, 0.24);
+    background: rgba(107, 212, 155, 0.09);
+    color: #b9f5d1;
+  }
+  .listing-form {
+    display: grid;
+    gap: 12px;
+  }
+  .listing-field {
+    display: grid;
+    gap: 6px;
+  }
+  .listing-field label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .listing-field input,
+  .listing-field textarea,
+  .listing-field select {
+    width: 100%;
+    border: 1px solid rgba(240, 242, 247, 0.13);
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.18);
+    color: var(--ink);
+    padding: 12px 13px;
+    font: 500 14px/1.25 'Inter', sans-serif;
+    outline: none;
+  }
+  .listing-field textarea {
+    min-height: 76px;
+    resize: vertical;
+  }
+  .listing-field input:focus,
+  .listing-field textarea:focus,
+  .listing-field select:focus {
+    border-color: rgba(206, 255, 0, 0.4);
+    box-shadow: 0 0 0 3px rgba(206, 255, 0, 0.08);
+  }
+  .listing-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .listing-submit {
+    margin-top: 4px;
+    border: 0;
+    border-radius: 999px;
+    padding: 15px 16px;
+    color: #071018;
+    background: var(--accent);
+    font: 800 14px/1 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform .2s var(--ease), opacity .2s var(--ease);
+  }
+  .listing-submit:hover {
+    transform: translateY(-1px);
+  }
+  .listing-submit:disabled {
+    opacity: 0.62;
+    cursor: progress;
+    transform: none;
+  }
+  .listing-helper {
+    color: var(--ink-3);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .profile-section-label {
+    margin: 22px 2px 12px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .active-rental-card,
+  .receipt-card,
+  .empty-profile-card {
+    border: 1px solid var(--hairline);
+    border-radius: 22px;
+    background: rgba(240, 242, 247, 0.075);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .active-rental-card {
+    padding: 18px;
+  }
+  .active-rental-head {
+    display: grid;
+    grid-template-columns: 54px 1fr;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .active-rental-glyph {
+    position: relative;
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    background: radial-gradient(circle at 50% 50%, rgba(143, 164, 255, 0.22), rgba(240, 242, 247, 0.05));
+  }
+  .active-rental-name {
+    color: var(--ink);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .active-rental-sub {
+    margin-top: 4px;
+    color: var(--ink-3);
+    font-size: 12px;
+  }
+  .rental-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .rental-detail {
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.18);
+    padding: 12px;
+  }
+  .rental-detail span {
+    display: block;
+    margin-bottom: 5px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .rental-detail strong {
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.25;
+    font-weight: 500;
+  }
+  .rental-escrow-note {
+    margin-top: 12px;
+    border: 1px solid rgba(107, 212, 155, 0.18);
+    border-radius: 16px;
+    background: rgba(107, 212, 155, 0.08);
+    padding: 10px 12px;
+    color: var(--ink-3);
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .rental-return-note {
+    margin-top: 8px;
+    color: var(--ink-3);
+    font-size: 11px;
+    line-height: 1.35;
+  }
+  .provenance-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .provenance-badge {
+    border: 1px solid rgba(240, 242, 247, 0.12);
+    border-radius: 999px;
+    padding: 5px 8px;
+    color: var(--ink-3);
+    background: rgba(0, 0, 0, 0.16);
+    font-family: 'Geist Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+  .execution-timeline {
+    margin-top: 12px;
+    border-top: 1px solid var(--hairline);
+    padding-top: 12px;
+  }
+  .execution-timeline summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--ink-2);
+    font-size: 12px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .execution-timeline summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+    border-radius: 4px;
+  }
+  .execution-timeline summary span {
+    color: var(--ink-3);
+    font-family: 'Geist Mono', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+  }
+  .execution-timeline ol {
+    list-style: none;
+    margin: 14px 0 0;
+    padding: 0 0 0 9px;
+    border-left: 1px solid var(--hairline);
+  }
+  .execution-step {
+    position: relative;
+    padding: 0 0 16px 14px;
+  }
+  .execution-step:last-child {
+    padding-bottom: 2px;
+  }
+  .execution-step::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: -13px;
+    width: 7px;
+    height: 7px;
+    border: 2px solid #151923;
+    border-radius: 50%;
+    background: var(--ink-3);
+  }
+  .execution-step.is-completed::before,
+  .execution-step.is-recovered::before {
+    background: #6bd49b;
+  }
+  .execution-step.is-failed::before {
+    background: #ff8f8f;
+  }
+  .execution-step-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--ink-2);
+    font-size: 11px;
+    font-weight: 650;
+  }
+  .execution-step-meta,
+  .execution-step-copy {
+    margin-top: 4px;
+    color: var(--ink-3);
+    font-size: 10px;
+    line-height: 1.4;
+  }
+  .execution-step-meta {
+    font-family: 'Geist Mono', monospace;
+    text-transform: uppercase;
+  }
+  .owner-action-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .owner-settle-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 13px 14px;
+    color: #071018;
+    background: var(--accent);
+    font: 700 13px/1 'Inter', sans-serif;
+    cursor: pointer;
+    transition: transform .2s var(--ease), opacity .2s var(--ease), background .2s var(--ease);
+  }
+  .owner-settle-btn.is-secondary {
+    color: var(--ink);
+    background: rgba(240, 242, 247, 0.12);
+    border: 1px solid rgba(240, 242, 247, 0.14);
+  }
+  .owner-settle-btn:hover {
+    transform: translateY(-1px);
+  }
+  .owner-settle-btn:disabled {
+    opacity: 0.58;
+    cursor: progress;
+    transform: none;
+  }
+  .active-rental-card.is-settling .owner-settle-btn {
+    opacity: 0.58;
+    pointer-events: none;
+  }
+  .receipt-card,
+  .empty-profile-card {
+    padding: 14px 16px;
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .receipt-card + .receipt-card {
+    margin-top: 10px;
+  }
+  .receipt-card strong {
+    display: block;
+    color: var(--ink);
+    font-size: 14px;
+    margin-bottom: 3px;
+  }
+
+  .mini-card {
+    flex: 0 0 auto;
+    width: 104px;
+    text-align: center;
+    cursor: pointer;
+    transition: opacity .2s var(--ease);
+  }
+  .mini-card:hover .mini-photo-glow { opacity: 1; transform: scale(1.08); }
+  .mini-card:active { opacity: 0.65; }
+
+  .mini-photo-wrap {
+    position: relative;
+    width: 86px; height: 86px;
+    margin: 0 auto 8px;
+  }
+  .mini-photo-glow {
+    position: absolute; inset: -4px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 50% 55%,
+        hsla(var(--h1), 95%, 65%, 0.50) 0%,
+        hsla(var(--h2), 80%, 55%, 0.28) 38%,
+        transparent 68%);
+    filter: blur(7px);
+    opacity: 0.75;
+    transition: opacity .3s var(--ease), transform .4s var(--ease-back);
+  }
+  .mini-photo-glyph {
+    position: absolute; inset: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 35px;
+    z-index: 2;
+    filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
+  }
+  .mini-name {
+    font-size: 11.5px; font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.005em;
+    line-height: 1.25;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mini-price {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10.5px;
+    color: var(--ink-3);
+    letter-spacing: 0.02em;
+  }
+
+  /* ─── responsive web shell overrides ─── */
+  html { min-height: 100%; }
+  body {
+    display: block;
+    height: 100svh;
+    min-height: 100svh;
+    padding: 0;
+    overflow: hidden;
+  }
+  .stage {
+    background:
+      radial-gradient(circle at 14% 20%, rgba(255, 190, 160, 0.16), transparent 32%),
+      radial-gradient(circle at 78% 18%, rgba(190, 232, 255, 0.18), transparent 34%),
+      radial-gradient(circle at 68% 78%, rgba(175, 164, 255, 0.14), transparent 36%),
+      linear-gradient(135deg, #090a11 0%, #05070d 46%, #0d1018 100%);
+  }
+  .phone {
+    width: 100%;
+    height: 100svh;
+    min-height: 100svh;
+    margin: 0 auto;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    overflow: hidden;
+  }
+  .screen {
+    width: 100%;
+    height: 100svh;
+    min-height: 100svh;
+    max-width: 1440px;
+    margin: 0 auto;
+    border-radius: 0;
+    display: grid;
+    grid-template-columns: minmax(360px, 460px) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: clamp(22px, 3.5vw, 56px);
+    padding: clamp(18px, 2.5vw, 34px);
+    overflow: hidden;
+    background: transparent;
+  }
+  .island,
+  .status-bar,
+  .home-indicator {
+    display: none;
+  }
+  .web-nav {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    min-height: 42px;
+  }
+  .web-mark {
+    font-family: 'Geist Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .web-links {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .web-pill {
+    border: 1px solid rgba(240, 242, 247, 0.16);
+    border-radius: 100px;
+    padding: 10px 14px;
+    color: rgba(240, 242, 247, 0.72);
+    background: rgba(240, 242, 247, 0.07);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    font: inherit;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color .2s var(--ease), background .2s var(--ease), color .2s var(--ease);
+  }
+  .web-pill:hover,
+  .web-pill.is-connected {
+    border-color: rgba(240, 242, 247, 0.32);
+    background: rgba(240, 242, 247, 0.12);
+    color: var(--ink);
+  }
+  .top {
+    grid-column: 1;
+    align-self: stretch;
+    min-height: 0;
+    padding: 0 0 clamp(18px, 2.4vw, 30px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .greeting {
+    text-align: left;
+    padding: 0;
+    max-width: 560px;
+  }
+  .brand {
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .headline {
+    max-width: 560px;
+    font-size: clamp(32px, 3.6vw, 48px);
+    line-height: 1;
+    letter-spacing: -0.045em;
+    margin-bottom: 12px;
+  }
+  .oracle-wrap {
+    height: clamp(168px, 19vw, 248px);
+    justify-content: flex-start;
+    margin: 0 0 2px;
+  }
+  .oracle-wrap canvas {
+    width: clamp(210px, 22vw, 280px);
+    height: clamp(210px, 22vw, 280px);
+  }
+  .speech {
+    margin: 0;
+    max-width: 520px;
+  }
+  .speech-inner {
+    padding: 8px 0 0;
+    text-align: left;
+    font-size: 15px;
+  }
+  .chat-bar {
+    max-width: 580px;
+    margin-top: 12px;
+    padding: 7px 8px 7px 20px;
+    background: rgba(240, 242, 247, 0.095);
+    border-color: rgba(240, 242, 247, 0.15);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.10),
+      0 18px 54px rgba(0, 0, 0, 0.25);
+  }
+  .chat-input {
+    font-size: 17px;
+    padding: 13px 0;
+  }
+  .chat-mic {
+    width: 46px;
+    height: 46px;
+  }
+  .chips-block {
+    max-width: 580px;
+    margin: 14px 0 0;
+    padding: 0;
+  }
+  .catalog-scroll {
+    grid-column: 2;
+    align-self: stretch;
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    padding: clamp(6px, 1vw, 14px) clamp(8px, 1.4vw, 20px) 32px;
+    border-radius: 0;
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+    mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 42px), transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, #000 0, #000 calc(100% - 42px), transparent 100%);
+  }
+  .section-head {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .section-head .title {
+    font-size: 22px;
+  }
+  .catalog {
+    grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+    gap: 42px 24px;
+    padding-top: clamp(18px, 3vh, 32px);
+    padding-bottom: 48px;
+  }
+  .photo-wrap {
+    width: min(170px, 100%);
+    height: 168px;
+  }
+  .photo-glow {
+    inset: -12px;
+    opacity: 0.82;
+    filter: blur(14px);
+  }
+  .photo {
+    font-size: 70px;
+  }
+  .specimen .name {
+    font-size: 15px;
+  }
+  .specimen .spec {
+    font-size: 12.5px;
+  }
+  .sheet-backdrop {
+    position: fixed;
+    z-index: 60;
+  }
+  .item-sheet {
+    position: fixed;
+    left: auto;
+    right: clamp(18px, 4vw, 48px);
+    top: clamp(74px, 8vw, 96px);
+    bottom: clamp(18px, 4vw, 48px);
+    width: min(520px, calc(100vw - 36px));
+    height: auto;
+    border-radius: 30px;
+    transform: translateX(calc(100% + 64px));
+    box-shadow: -34px 0 100px rgba(0, 0, 0, 0.55);
+  }
+  .item-sheet.open {
+    transform: translateX(0);
+  }
+
+  @media (max-width: 980px) {
+    body {
+      padding: 0;
+    }
+    .phone,
+    .screen {
+      width: 100%;
+      min-height: 100svh;
+      border-radius: 0;
+    }
+    .screen {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto minmax(0, 0.9fr) minmax(0, 1.1fr);
+      padding: 20px;
+      gap: 14px;
+    }
+    .web-links {
+      gap: 12px;
+    }
+    .web-links span:not(.web-pill) {
+      display: none;
+    }
+    .top {
+      grid-column: 1;
+      padding: 0;
+      justify-content: start;
+    }
+    .greeting,
+    .speech-inner {
+      text-align: center;
+    }
+    .headline {
+      margin-inline: auto;
+      font-size: clamp(30px, 7vw, 44px);
+    }
+    .oracle-wrap {
+      justify-content: center;
+      height: clamp(160px, 33vw, 230px);
+    }
+    .oracle-wrap canvas {
+      width: clamp(190px, 42vw, 250px);
+      height: clamp(190px, 42vw, 250px);
+    }
+    .speech,
+    .chat-bar,
+    .chips-block {
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .catalog-scroll {
+      grid-column: 1;
+      height: 100%;
+      min-height: 0;
+      max-height: none;
+      padding: 0 0 28px;
+      border-radius: 0;
+      overflow-y: auto;
+      mask-image: none;
+      -webkit-mask-image: none;
+    }
+    .section-head {
+      position: absolute;
+      background: transparent;
+    }
+    .catalog {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .screen {
+      padding: 16px;
+    }
+    .web-mark {
+      font-size: 16px;
+    }
+    .web-pill {
+      padding: 9px 11px;
+    }
+    .headline {
+      font-size: clamp(34px, 12vw, 48px);
+    }
+    .catalog-scroll {
+      border-radius: 0;
+      padding: 0 0 24px;
+    }
+    .catalog {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px 12px;
+    }
+    .photo-wrap {
+      width: min(136px, 100%);
+      height: 132px;
+    }
+    .photo {
+      font-size: 58px;
+    }
+    .item-sheet {
+      left: 10px;
+      right: 10px;
+      top: auto;
+      bottom: 10px;
+      width: auto;
+      height: min(86svh, 680px);
+      border-radius: 30px;
+      transform: translateY(110%);
+      box-shadow: 0 -30px 80px rgba(0, 0, 0, 0.55);
+    }
+    .item-sheet.open {
+      transform: translateY(0);
+    }
+  }
+
+  /* Center-core web composition: agent first, product shelf second. */
+  .screen {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) clamp(178px, 23vh, 238px);
+    gap: clamp(12px, 1.8vw, 24px);
+    max-width: 1480px;
+  }
+  .web-nav {
+    position: relative;
+    z-index: 12;
+  }
+  .top {
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+    z-index: 20;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    min-height: 0;
+    gap: 0;
+  }
+  .greeting {
+    text-align: center;
+    max-width: min(780px, 92vw);
+  }
+  .brand {
+    margin-bottom: 8px;
+  }
+  .headline {
+    max-width: 520px;
+    margin: 0 auto;
+    font-size: clamp(15px, 1.4vw, 19px);
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    color: rgba(240, 242, 247, 0.58);
+  }
+  .oracle-wrap {
+    height: clamp(300px, 43vh, 440px);
+    justify-content: center;
+    margin: clamp(6px, 1vh, 12px) 0 clamp(-26px, -2vh, -12px);
+  }
+  .oracle-wrap canvas {
+    position: relative;
+    width: clamp(340px, 42vw, 560px);
+    height: clamp(340px, 42vw, 560px);
+  }
+  .speech,
+  .chat-bar,
+  .chips-block {
+    width: min(640px, 92vw);
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .speech-inner {
+    text-align: center;
+  }
+  .chat-bar {
+    margin-top: 0;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.075)),
+      rgba(13, 15, 22, 0.62);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.13),
+      0 18px 58px rgba(0, 0, 0, 0.28),
+      0 0 80px rgba(126, 205, 255, 0.09);
+  }
+  .chips-block {
+    display: block;
+    position: relative;
+    z-index: 35;
+    margin-top: 14px;
+    opacity: 0.88;
+  }
+  .chips-label {
+    display: none;
+  }
+  .chips {
+    justify-content: center;
+    flex-wrap: wrap;
+    overflow: visible;
+    gap: 8px;
+  }
+  .catalog-scroll {
+    grid-column: 1;
+    grid-row: 3;
+    position: relative;
+    z-index: 1;
+    align-self: stretch;
+    width: 100%;
+    height: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 clamp(10px, 2vw, 24px) 8px;
+    mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 5%, #000 95%, transparent 100%);
+  }
+  .catalog {
+    display: flex;
+    grid-template-columns: none;
+    flex-wrap: nowrap;
+    align-items: end;
+    gap: clamp(18px, 3vw, 42px);
+    min-width: max-content;
+    padding: 8px clamp(28px, 4vw, 64px) 18px;
+  }
+  .specimen {
+    flex: 0 0 clamp(150px, 13vw, 198px);
+    opacity: 0.88;
+  }
+  .specimen:hover {
+    opacity: 1;
+  }
+  .photo-wrap {
+    width: min(166px, 100%);
+    height: clamp(126px, 14vh, 164px);
+  }
+  .photo {
+    font-size: clamp(54px, 6vw, 74px);
+  }
+  .specimen .name {
+    font-size: clamp(13px, 1.05vw, 15px);
+  }
+  .specimen .spec {
+    font-size: 12px;
+  }
+
+  @media (max-width: 980px) {
+    .screen {
+      grid-template-rows: auto minmax(0, 1fr) clamp(160px, 24vh, 210px);
+      gap: 10px;
+    }
+    .headline {
+      font-size: clamp(15px, 3vw, 18px);
+    }
+    .oracle-wrap {
+      height: clamp(260px, 38vh, 340px);
+    }
+    .oracle-wrap canvas {
+      width: clamp(300px, 70vw, 400px);
+      height: clamp(300px, 70vw, 400px);
+    }
+    .catalog {
+      display: flex;
+      gap: 24px;
+      padding-inline: 20px;
+    }
+    .specimen {
+      flex-basis: 150px;
+    }
+    .photo-wrap {
+      height: 126px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .screen {
+      grid-template-rows: auto minmax(0, 1fr) 154px;
+      padding: 14px;
+    }
+    .web-nav {
+      min-height: 34px;
+    }
+    .web-links span:not(.web-pill) {
+      display: none;
+    }
+    .headline {
+      font-size: clamp(14px, 4vw, 17px);
+      max-width: 360px;
+    }
+    .oracle-wrap {
+      height: clamp(230px, 35vh, 290px);
+    }
+    .oracle-wrap canvas {
+      width: clamp(260px, 78vw, 330px);
+      height: clamp(260px, 78vw, 330px);
+    }
+    .chat-input {
+      font-size: 15px;
+      padding: 10px 0;
+    }
+    .chat-mic {
+      width: 40px;
+      height: 40px;
+    }
+    .chips-block {
+      display: none;
+    }
+    .catalog-scroll {
+      padding-bottom: 0;
+    }
+    .catalog {
+      padding: 6px 14px 10px;
+      gap: 18px;
+    }
+    .specimen {
+      flex-basis: 128px;
+    }
+    .photo-wrap {
+      height: 98px;
+    }
+    .photo {
+      font-size: 46px;
+    }
+  }
+
+  /* Vertical reveal: orb-centered page, sticky chatbox, products below. */
+  html {
+    overflow-x: clip;
+  }
+  body {
+    height: auto;
+    min-height: 100svh;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .phone {
+    margin: 0;
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+  .screen {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+    grid-template-rows: auto minmax(610px, calc(100svh - 116px)) auto;
+  }
+  .top {
+    min-height: 0;
+  }
+  .oracle-wrap {
+    height: clamp(410px, 58vh, 620px);
+    margin-bottom: clamp(30px, 5vh, 68px);
+  }
+  .oracle-wrap canvas {
+    width: clamp(460px, 54vw, 760px);
+    height: clamp(460px, 54vw, 760px);
+  }
+  .chat-bar {
+    position: sticky;
+    bottom: clamp(18px, 3vh, 34px);
+    z-index: 30;
+  }
+  body:not([data-state="idle"]) .speech {
+    margin-bottom: clamp(16px, 2.5vh, 32px);
+  }
+  body[data-state="idle"] .speech {
+    margin-bottom: 0;
+  }
+  .catalog-scroll {
+    height: auto;
+    overflow: visible;
+    margin-top: clamp(-156px, -15vh, -102px);
+    padding: 0 clamp(10px, 2vw, 24px) 64px;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .catalog {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+    min-width: 0;
+    align-items: start;
+    padding: clamp(116px, 15vh, 160px) clamp(28px, 4vw, 64px) 18px;
+  }
+  .specimen {
+    flex: none;
+  }
+
+  @media (max-width: 980px) {
+    .screen {
+      min-height: 100svh;
+      grid-template-rows: auto minmax(590px, calc(100svh - 92px)) auto;
+    }
+    .oracle-wrap {
+      height: clamp(360px, 52vh, 500px);
+      margin-bottom: 34px;
+    }
+    .oracle-wrap canvas {
+      width: clamp(390px, 84vw, 560px);
+      height: clamp(390px, 84vw, 560px);
+    }
+    .catalog {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      padding-top: 110px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .screen {
+      grid-template-rows: auto minmax(560px, calc(100svh - 72px)) auto;
+    }
+    .oracle-wrap {
+      height: clamp(330px, 48vh, 430px);
+      margin-bottom: 28px;
+    }
+    .oracle-wrap canvas {
+      width: clamp(340px, 94vw, 430px);
+      height: clamp(340px, 94vw, 430px);
+    }
+    .catalog-scroll {
+      margin-top: -82px;
+      padding-bottom: 44px;
+    }
+    .catalog {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      padding-top: 82px;
+    }
+    .chips-block {
+      display: block;
+      margin-top: 10px;
+    }
+    .chips {
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+  }
+
+</style>
+</head>
+<body data-state="idle">
+
+  <div class="stage"></div>
+
+  <div class="phone">
+    <div class="screen">
+      <header class="web-nav" aria-label="Gimi navigation">
+        <div class="web-mark">Gimi</div>
+        <div class="web-links">
+          <span>Community rentals</span>
+          <span>Nearby inventory</span>
+          <button class="web-pill" id="navWallet" type="button">Connect wallet</button>
+        </div>
+      </header>
+      <div class="island"></div>
+
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="icons">
+          <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="6" width="3" height="5" rx="0.6"/><rect x="4.5" y="4" width="3" height="7" rx="0.6"/><rect x="9" y="2" width="3" height="9" rx="0.6"/><rect x="13.5" y="0" width="3" height="11" rx="0.6"/></svg>
+          <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor"><path d="M7.5 2.9C9.6 2.9 11.5 3.7 12.9 5L13.9 4C12.3 2.3 10 1.3 7.5 1.3S2.7 2.3 1.1 4l1 1c1.4-1.3 3.3-2.1 5.4-2.1zM7.5 6.2c1.3 0 2.4.4 3.3 1.2l1-1c-1.1-1-2.7-1.7-4.3-1.7S4.3 5.4 3.2 6.4l1 1c.9-.8 2-1.2 3.3-1.2zm0 2.5c.8 0 1.4.3 1.9.8l.9-.9c-.7-.7-1.7-1.1-2.8-1.1s-2.1.4-2.8 1.1l.9.9c.5-.5 1.1-.8 1.9-.8z"/></svg>
+          <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="0.5" y="0.5" width="21" height="11" rx="3" stroke="currentColor" stroke-opacity="0.4"/><rect x="2" y="2" width="18" height="8" rx="2" fill="currentColor"/><path d="M23 4.5v3c.7-.2 1.3-.9 1.3-1.5S23.7 4.7 23 4.5z" fill="currentColor" fill-opacity="0.5"/></svg>
+        </div>
+      </div>
+
+      <div class="top">
+
+        <div class="greeting">
+          <div class="brand">Gimi</div>
+          <div class="headline">Ask Gimi for anything nearby.</div>
+        </div>
+
+        <div class="oracle-wrap">
+          <canvas id="oracle"></canvas>
+        </div>
+
+        <div class="speech">
+          <div class="speech-inner">
+            <span class="when-listening"><span class="label"><span class="dot"></span>You</span><span id="transcript"></span></span>
+            <span class="when-processing"><span class="label"><span class="dot"></span>Gimi</span>searching<span id="dots">…</span></span>
+            <span class="when-responding"><span class="label"><span class="dot"></span>Gimi</span><span class="body" id="reply"></span></span>
+          </div>
+        </div>
+
+        <div class="chat-bar">
+          <input class="chat-input" id="chatInput" placeholder="What do you need?" autocomplete="off"/>
+          <button class="chat-mic" id="chatMic" aria-label="Voice">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+          </button>
+        </div>
+
+        <div class="chips-block">
+          <div class="chips-label">Try asking:</div>
+          <div class="chips" id="chips">
+            <button class="chip" data-q="USB-C charger for my laptop">Laptop charger</button>
+            <button class="chip" data-q="Wireless mic for an interview">Wireless mic</button>
+            <button class="chip" data-q="Camera for a product shoot">Camera setup</button>
+            <button class="chip" data-q="Projector for a presentation">Projector</button>
+            <button class="chip" data-q="Portable monitor for coding">Portable monitor</button>
+            <button class="chip" data-q="Wi-Fi router for our booth">Booth Wi-Fi</button>
+            <button class="chip" data-q="Tripod for a demo video">Video tripod</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="catalog-scroll" id="catalogScroll">
+        <div class="section-head">
+          <div class="title">Near you</div>
+          <div class="meta" id="catalogMeta"></div>
+        </div>
+        <div class="catalog" id="catalog"></div>
+      </div>
+
+      <div class="streak-layer" id="streakLayer"></div>
+
+      <div class="sheet-backdrop" id="sheetBackdrop"></div>
+      <div class="item-sheet" id="itemSheet" role="dialog" aria-modal="true">
+        <button class="sheet-close" id="sheetClose" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="sheet-content">
+          <div class="sheet-handle"></div>
+          <div class="sheet-hero">
+            <div class="sheet-hero-glow" id="sheetHeroGlow"></div>
+            <div class="sheet-hero-photo" id="sheetHeroPhoto"></div>
+          </div>
+          <div class="sheet-name" id="sheetName"></div>
+          <div class="sheet-meta" id="sheetMeta"></div>
+          <div class="sheet-price-row">
+            <span class="sheet-price" id="sheetPrice"></span>
+            <span class="sheet-price-unit">/day</span>
+          </div>
+          <div class="sheet-availability"><span class="dot"></span>Available now</div>
+          <div class="rental-length">
+            <div class="rental-length-head">
+              <span>Borrow for</span>
+              <span class="rental-length-total" id="rentalLengthTotal">3h estimate</span>
+            </div>
+            <div class="duration-options" id="durationOptions" aria-label="Rental duration">
+              <button class="duration-option" type="button" data-hours="1">1h</button>
+              <button class="duration-option" type="button" data-hours="3">3h</button>
+              <button class="duration-option" type="button" data-hours="6">6h</button>
+              <button class="duration-option" type="button" data-hours="24">1d</button>
+            </div>
+          </div>
+          <div class="payment-router">
+            <div class="payment-router-head">
+              <span>Payment</span>
+              <span>Receipt on Solana</span>
+            </div>
+            <div class="payment-options" id="paymentOptions" aria-label="Payment method">
+              <button class="payment-option is-selected" type="button" data-payment-method="card">
+                <strong>Card</strong>
+                <span>Apple Pay / provider</span>
+              </button>
+              <button class="payment-option" type="button" data-payment-method="solana_wallet">
+                <strong>Solana wallet</strong>
+                <span>USDC escrow</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="sheet-divider"></div>
+          <div class="sheet-similar-label">Often paired with</div>
+          <div class="sheet-similar-row" id="sheetSimilar"></div>
+        </div>
+        <div class="sheet-cta">
+          <button class="sheet-cta-btn" id="sheetCTA" type="button">Connect wallet</button>
+          <div class="sheet-cta-sub" id="sheetCTASub">Use Privy once, then rent from this wallet</div>
+        </div>
+      </div>
+
+      <div class="item-sheet profile-sheet" id="profileSheet" role="dialog" aria-modal="true">
+        <button class="sheet-close" id="profileClose" aria-label="Close profile">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <div class="sheet-content">
+          <div class="sheet-handle"></div>
+          <div class="profile-title">Your rentals</div>
+          <div class="profile-wallet" id="profileWallet">Connect wallet</div>
+          <div class="profile-evidence" id="profileEvidencePanel" aria-live="polite">
+            <div class="profile-evidence-copy">Connect a wallet to inspect separated demo and pilot evidence.</div>
+          </div>
+          <div class="profile-tabs" role="tablist" aria-label="Rental profile">
+            <button class="profile-tab is-active" id="borrowingTab" type="button" role="tab" aria-selected="true" aria-controls="borrowingPane" data-profile-tab="borrowing">Borrowing now</button>
+            <button class="profile-tab" id="lendingTab" type="button" role="tab" aria-selected="false" aria-controls="lendingPane" data-profile-tab="lending">Lending now</button>
+            <button class="profile-tab" id="listingTab" type="button" role="tab" aria-selected="false" aria-controls="listingPane" data-profile-tab="listing">List item</button>
+          </div>
+          <div class="profile-pane is-active" id="borrowingPane" role="tabpanel" aria-labelledby="borrowingTab">
+            <div class="profile-section-label">Notifications</div>
+            <div id="notificationsPanel">
+              <div class="empty-profile-card">Important rental updates will appear here.</div>
+            </div>
+            <div class="profile-section-label">Borrowing now</div>
+            <div id="activeRentalsPanel">
+              <div class="empty-profile-card">Connect your wallet to see active rentals.</div>
+            </div>
+            <div class="profile-section-label">Receipts</div>
+            <div id="rentalReceiptsPanel">
+              <div class="empty-profile-card">Returned items and buyout receipts will appear here.</div>
+            </div>
+          </div>
+          <div class="profile-pane" id="lendingPane" role="tabpanel" aria-labelledby="lendingTab">
+            <div class="profile-section-label">Lending now</div>
+            <div class="profile-status" id="lendingStatus"></div>
+            <div id="lendingRentalsPanel">
+              <div class="empty-profile-card">Items you are lending will appear here after a renter starts checkout.</div>
+            </div>
+          </div>
+          <div class="profile-pane" id="listingPane" role="tabpanel" aria-labelledby="listingTab">
+            <div class="profile-section-label">Your inventory</div>
+            <div id="ownerInventoryPanel">
+              <div class="empty-profile-card">Connect your wallet to manage listed items.</div>
+            </div>
+            <div class="profile-section-label">List an item</div>
+            <div class="profile-status" id="listingStatus"></div>
+            <form class="listing-form" id="listingForm">
+              <div class="listing-field">
+                <label for="listingName">Item name</label>
+                <input id="listingName" name="name" value="Anker Power Bank" maxlength="100" required />
+              </div>
+              <div class="listing-grid">
+                <div class="listing-field">
+                  <label for="listingBrand">Brand</label>
+                  <input id="listingBrand" name="brand" value="Anker" maxlength="80" />
+                </div>
+                <div class="listing-field">
+                  <label for="listingModel">Model</label>
+                  <input id="listingModel" name="model" value="20K USB-C" maxlength="80" />
+                </div>
+              </div>
+              <div class="listing-grid">
+                <div class="listing-field">
+                  <label for="listingCategory">Category</label>
+                  <select id="listingCategory" name="category">
+                    <option>Power</option>
+                    <option>Camera</option>
+                    <option>Audio</option>
+                    <option>Tools</option>
+                    <option>Outdoor</option>
+                    <option>Event</option>
+                  </select>
+                </div>
+                <div class="listing-field">
+                  <label for="listingCondition">Condition</label>
+                  <input id="listingCondition" name="condition" type="number" min="1" max="10" step="1" value="9" required />
+                </div>
+              </div>
+              <div class="listing-field">
+                <label for="listingDescription">Description</label>
+                <textarea id="listingDescription" name="description" maxlength="1000" required>High-capacity USB-C power bank with cable.</textarea>
+              </div>
+              <div class="listing-field">
+                <label for="listingImageUrl">Photo URL</label>
+                <input id="listingImageUrl" name="imageUrl" type="url" value="https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=900&h=700&fit=crop" required />
+              </div>
+              <div class="listing-field">
+                <label for="listingPhotoFile">Upload photo</label>
+                <input id="listingPhotoFile" name="photoFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+              </div>
+              <div class="listing-field">
+                <label for="listingPickup">Pickup</label>
+                <input id="listingPickup" name="locationLabel" value="Library desk" maxlength="140" required />
+              </div>
+              <div class="listing-field">
+                <label for="listingIncluded">Included</label>
+                <input id="listingIncluded" name="included" value="USB-C cable" maxlength="180" />
+              </div>
+              <div class="listing-grid">
+                <div class="listing-field">
+                  <label for="listingRate">Rate / hour</label>
+                  <input id="listingRate" name="ratePerHour" type="number" min="0.01" step="0.01" value="2" required />
+                </div>
+                <div class="listing-field">
+                  <label for="listingMinimum">Minimum fee</label>
+                  <input id="listingMinimum" name="minimumFee" type="number" min="0.01" step="0.01" value="3" required />
+                </div>
+              </div>
+              <div class="listing-grid">
+                <div class="listing-field">
+                  <label for="listingBuyout">Escrow cap</label>
+                  <input id="listingBuyout" name="buyoutCap" type="number" min="0.01" step="0.01" value="30" required />
+                </div>
+                <div class="listing-field">
+                  <label for="listingGrace">Grace seconds</label>
+                  <input id="listingGrace" name="autoBuyoutGraceSeconds" type="number" min="0" step="60" value="3600" required />
+                </div>
+              </div>
+              <button class="listing-submit" id="listingSubmit" type="submit">Initialize item on devnet</button>
+              <div class="listing-helper">Owner wallet signs initialize_item first. After confirmation, Gimi verifies the item PDA and publishes it into inventory.</div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+<script>
+/* ────────────────────────────────────────────────────────────────────
+   CATALOG
+──────────────────────────────────────────────────────────────────── */
+const ITEMS = [
+  { id:'power_bank_18', name:'Anker Power Bank',      owner:'Gimi Desk', dist:'0.2 mi', price:48,  glyph:'🔋', hue:130, tags:['power','battery','charger','phone','laptop'] },
+  { id:'charger_07',    name:'USB-C Charger',         owner:'Gimi Desk', dist:'0.2 mi', price:24,  glyph:'🔌', hue:190, tags:['power','charger','usb-c','phone','laptop'] },
+  { id:'adapter_03',    name:'HDMI Adapter',          owner:'A/V Desk',  dist:'0.4 mi', price:24,  glyph:'🔗', hue:210, tags:['adapter','hdmi','display','projector','video'] },
+  { id:'mic_11',        name:'Wireless Mic',          owner:'Media Lab', dist:'0.5 mi', price:72,  glyph:'🎙', hue:285, tags:['mic','audio','interview','video','shoot'] },
+  { id:'camera_04',     name:'Mirrorless Camera',     owner:'Media Lab', dist:'0.5 mi', price:192, glyph:'📷', hue:320, tags:['camera','photo','video','shoot'] },
+  { id:'tripod_09',     name:'Manfrotto Tripod',      owner:'A/V Desk',  dist:'0.4 mi', price:24,  glyph:'📐', hue:40,  tags:['tripod','photo','video','shoot'] },
+  { id:'keyboard_15',   name:'MX Keys Mini',          owner:'Dev Hub',   dist:'0.3 mi', price:24,  glyph:'⌨️', hue:340, tags:['keyboard','workspace','computer'] },
+  { id:'monitor_22',    name:'Portable Monitor',      owner:'Dev Hub',   dist:'0.3 mi', price:96,  glyph:'🖥', hue:215, tags:['monitor','display','workspace','computer'] },
+  { id:'router_06',     name:'Travel Router',         owner:'Infra Bar', dist:'0.6 mi', price:48,  glyph:'📡', hue:155, tags:['router','wifi','network','internet'] },
+  { id:'projector_13',  name:'Mini Projector',        owner:'A/V Desk',  dist:'0.4 mi', price:120, glyph:'📽', hue:300, tags:['projector','movie','presentation','video'] },
+];
+
+function matchItems(query) {
+  const q = (query || '').toLowerCase();
+  const words = q.split(/[^a-z0-9]+/).filter(Boolean);
+  return ITEMS.map(it => {
+    let s = 0;
+    const hay = (it.name + ' ' + it.tags.join(' ')).toLowerCase();
+    for (const w of words) {
+      if (it.tags.includes(w)) s += 5;
+      else if (hay.includes(w)) s += 2;
+    }
+    if (/golf/.test(q)                              && it.tags.includes('golf'))                                                       s += 8;
+    if (/camp|outdoor|weekend/.test(q)              && it.tags.includes('camping'))                                                    s += 5;
+    if (/drone|shoot|photo|video/.test(q)           && (it.tags.includes('shoot') || it.tags.includes('photo')))                       s += 5;
+    if (/party|birthday|event/.test(q)              && (it.tags.includes('party')||it.tags.includes('event')||it.tags.includes('birthday'))) s += 5;
+    if (/ski|snow|tahoe|winter/.test(q)             && it.tags.includes('snow'))                                                       s += 6;
+    if (/drill|diy|fix|repair|home/.test(q)         && (it.tags.includes('diy') || it.tags.includes('fix')))                           s += 5;
+    if (/kayak|paddle|water|lake|beach/.test(q)     && it.tags.includes('water'))                                                      s += 5;
+    return { it, s };
+  }).filter(x => x.s > 0).sort((a, b) => b.s - a.s).map(x => x.it);
+}
+
+const REPLY = (q) => {
+  const lq = q.toLowerCase();
+  if (/charger|power|battery|laptop/.test(lq))  return { lead: "Found a charger and power bank at Gimi Desk.", glow: " Two minutes away." };
+  if (/mic|audio|interview/.test(lq))            return { lead: "Found a wireless mic at Media Lab.", glow: " Ready for pickup." };
+  if (/camera|shoot|photo|video/.test(lq))       return { lead: "Found a camera and tripod nearby.", glow: " One media setup." };
+  if (/projector|presentation/.test(lq))         return { lead: "Found a projector and HDMI adapter.", glow: " One pickup." };
+  if (/monitor|coding|workspace/.test(lq))       return { lead: "Found a portable monitor and keyboard.", glow: " At Dev Hub." };
+  if (/wifi|wi-fi|router|network/.test(lq))      return { lead: "Found a travel router at Infra Bar.", glow: " Booth-ready." };
+  return { lead: "Found what fits nearby.", glow: " Nearest first." };
+};
+
+/* render catalog — note the photo slot is empty for now (emoji placeholder),
+   but the structure accepts real PNG product photos */
+const catalogEl = document.getElementById('catalog');
+document.getElementById('catalogMeta').textContent = `${ITEMS.length} items`;
+function renderCatalog() {
+  catalogEl.innerHTML = '';
+  ITEMS.forEach((it) => {
+    const cell = document.createElement('div');
+    cell.className = 'specimen';
+    cell.dataset.id = it.id;
+    const h1 = it.hue;
+    const h2 = (it.hue + 40) % 360;
+    cell.innerHTML = `
+      <div class="photo-wrap">
+        <div class="photo-glow" style="--h1:${h1}; --h2:${h2};"></div>
+        <div class="photo"><span aria-hidden="true">${it.glyph}</span></div>
+      </div>
+      <div class="name">${it.name}</div>
+      <div class="spec"><span class="price">$${it.price}</span>/day · ${it.dist}</div>
+    `;
+    catalogEl.appendChild(cell);
+  });
+}
+renderCatalog();
+
+function highlightMatches(ids) {
+  document.querySelectorAll('.specimen').forEach(el => {
+    el.classList.toggle('match', ids.includes(el.dataset.id));
+    el.classList.toggle('fade', ids.length > 0 && !ids.includes(el.dataset.id));
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   ORACLE — particle sphere, warm + cool chromatic fluids
+   plus: scan-beam during processing, ripple burst on found
+──────────────────────────────────────────────────────────────────── */
+const TAU = Math.PI * 2;
+
+function fibSphere(n) {
+  const pts = [];
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < n; i++) {
+    const y = 1 - (i / (n - 1)) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const a = golden * i;
+    pts.push({ x: Math.cos(a) * r, y, z: Math.sin(a) * r });
+  }
+  return pts;
+}
+
+const N_DUST = 220;
+const DUST = fibSphere(N_DUST);
+const ITEM_PTS = fibSphere(Math.max(ITEMS.length, 1));
+
+const FLUIDS = [
+  { hue: 195, phase: 0.0, speed: 0.30 },   // icy cyan
+  { hue: 220, phase: 1.6, speed: 0.27 },   // sky indigo
+  { hue: 250, phase: 3.0, speed: 0.40 },   // violet
+  { hue: 270, phase: 4.5, speed: 0.34 },   // deep violet
+];
+
+/* Network of item nodes — each item is a node on the sphere,
+   connected to its 3 nearest neighbors. Pulses travel along these
+   connections during search and propagate outward when a match is found. */
+const NETWORK_EDGES = [];
+{
+  const seen = new Set();
+  for (let i = 0; i < ITEM_PTS.length; i++) {
+    const dists = [];
+    for (let j = 0; j < ITEM_PTS.length; j++) {
+      if (i === j) continue;
+      const a = ITEM_PTS[i], b = ITEM_PTS[j];
+      const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+      dists.push({ j, d: dx * dx + dy * dy + dz * dz });
+    }
+    dists.sort((a, b) => a.d - b.d);
+    for (let k = 0; k < 3; k++) {
+      const lo = Math.min(i, dists[k].j), hi = Math.max(i, dists[k].j);
+      const key = lo + ':' + hi;
+      if (!seen.has(key)) { seen.add(key); NETWORK_EDGES.push([lo, hi]); }
+    }
+  }
+}
+
+/* Active pulses traveling along network edges. Spawned during search
+   (random edges) and cleared on found. */
+let PULSES = [];
+function spawnPulse(fromIdx, toIdx, hue, duration) {
+  PULSES.push({
+    fromIdx, toIdx,
+    startTime: performance.now(),
+    duration: duration || 700,
+    hue
+  });
+}
+
+/* Click rings — expanding rings that appear at match positions when
+   Gimi clicks the found items (the "found it" moment). Replaces the
+   outward propagation pulses. */
+let CLICK_RINGS = [];
+function spawnClickRing(matchIdx, delayMs) {
+  CLICK_RINGS.push({
+    matchIdx,
+    startTime: performance.now() + (delayMs || 0),
+    duration: 800,
+    hue: ITEMS[matchIdx].hue
+  });
+}
+
+const cv = document.getElementById('oracle');
+const ctx = cv.getContext('2d');
+let cw = 0, ch = 0, dpr = 1;
+function fit() {
+  const r = cv.getBoundingClientRect();
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width  = Math.round(r.width  * dpr);
+  cv.height = Math.round(r.height * dpr);
+  cw = r.width; ch = r.height;
+}
+new ResizeObserver(fit).observe(cv);
+fit();
+
+const STATE = {
+  idle:       { spin: 0.10, jitter: 0.04, items: 0.0, lineGlow: 0.0, fluidI: 1.00, net: 0.10, zoom: 1.00 },
+  listening:  { spin: 0.30, jitter: 0.18, items: 0.0, lineGlow: 0.0, fluidI: 0.90, net: 0.55, zoom: 1.10 },
+  processing: { spin: 0.25, jitter: 0.06, items: 0.0, lineGlow: 0.3, fluidI: 0.30, net: 1.00, zoom: 1.32 },
+  responding: { spin: 0.18, jitter: 0.04, items: 1.0, lineGlow: 1.0, fluidI: 0.80, net: 0.90, zoom: 1.15 },
+};
+let cur = 'idle';
+let targets = { ...STATE.idle };
+let cp = { ...STATE.idle };
+let ay = 0, ax = 0;
+let level = 0;
+let ringTime = 0;
+let topMatches = [];
+let bestIdx = -1;
+let burstT = 0;            // burst timer at "found" moment
+let releaseT = 0;          // controls items shrinking back after release
+let t0 = performance.now();
+
+function setState(s) {
+  cur = s;
+  targets = STATE[s];
+  document.body.dataset.state = s;
+  if (s === 'responding') {
+    ringTime = performance.now(); burstT = 0; releaseT = 0;
+    // stop the scanning pulses — search is over
+    PULSES = [];
+    // (click rings disabled — TBD what the found-it visual should be)
+  }
+  if (s === 'idle') {
+    topMatches = []; bestIdx = -1; highlightMatches([]);
+    PULSES = []; CLICK_RINGS = [];
+  }
+}
+
+function lerp(a, b, k) { return a + (b - a) * k; }
+
+function project(p, R, jx = 0, jy = 0, jz = 0) {
+  let x = p.x + jx, y = p.y + jy, z = p.z + jz;
+  const cosY = Math.cos(ay), sinY = Math.sin(ay);
+  const x1 = x * cosY - z * sinY;
+  const z1 = x * sinY + z * cosY;
+  const cosX = Math.cos(ax), sinX = Math.sin(ax);
+  const y1 = y * cosX - z1 * sinX;
+  const z2 = y * sinX + z1 * cosX;
+  const persp = 1 / (1.6 - z2 * 0.4);
+  return { sx: cw / 2 + x1 * R * persp, sy: ch / 2 + y1 * R * persp, depth: (z2 + 1) / 2, persp };
+}
+
+function render(now) {
+  const t = (now - t0) / 1000;
+  cp.spin     = lerp(cp.spin,     targets.spin,     0.06);
+  cp.jitter   = lerp(cp.jitter,   targets.jitter,   0.10);
+  cp.items    = lerp(cp.items,    targets.items,    0.06);
+  cp.lineGlow = lerp(cp.lineGlow, targets.lineGlow, 0.08);
+  cp.fluidI   = lerp(cp.fluidI ?? 1, targets.fluidI, 0.06);
+  cp.net      = lerp(cp.net ?? 0, targets.net,   0.07);
+  cp.zoom     = lerp(cp.zoom ?? 1, targets.zoom, 0.05);
+
+  if (cur === 'listening') level = lerp(level, 0.4 + Math.random() * 0.5, 0.35);
+  else level = lerp(level, 0, 0.2);
+
+  if (cur === 'responding') {
+    burstT = Math.min(1, burstT + 0.04);
+    // ~0.6s after entering responding, items start "releasing"
+    if (burstT > 0.5) releaseT = Math.min(1, releaseT + 0.025);
+  }
+
+  ay += cp.spin * 0.012;
+  ax = Math.sin(t * 0.13) * 0.30;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cw, ch);
+
+  const cx = cw / 2, cy = ch / 2;
+  const R = Math.min(cw, ch) * 0.36 * cp.zoom;
+  const breath = 1 + Math.sin(t * 1.4) * 0.014;
+
+  /* chromatic liquid wash */
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const f of FLUIDS) {
+    const ang = f.phase + t * f.speed;
+    const orbitR = R * 0.34;
+    const fx = cx + Math.cos(ang) * orbitR * (1 + Math.sin(t * 0.4 + f.phase) * 0.18);
+    const fy = cy + Math.sin(ang * 1.2 + f.phase) * orbitR * 0.6;
+    const rad = R * (0.58 + Math.sin(t * 0.6 + f.phase) * 0.06) * (1 + cp.jitter * 0.16);
+    const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, rad);
+    g.addColorStop(0,   `hsla(${f.hue}, 100%, 72%, ${0.44 * cp.fluidI})`);
+    g.addColorStop(0.5, `hsla(${f.hue}, 95%, 58%, ${0.18 * cp.fluidI})`);
+    g.addColorStop(1,   `hsla(${f.hue}, 95%, 55%, 0.00)`);
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(fx, fy, rad, 0, TAU); ctx.fill();
+  }
+  ctx.restore();
+
+  /* halo */
+  const halo = ctx.createRadialGradient(cx, cy, R * 0.38, cx, cy, R * 0.92);
+  halo.addColorStop(0.0, 'rgba(255, 180, 150, 0.00)');
+  halo.addColorStop(0.5, `rgba(255, 180, 150, ${0.06 + cp.lineGlow * 0.08})`);
+  halo.addColorStop(1.0, 'rgba(181, 228, 255, 0.00)');
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(cx, cy, R * 0.92, 0, TAU);
+  ctx.fill();
+
+  /* dust tinted by nearest fluid */
+  const jitterAmp = cp.jitter + level * 0.4;
+  for (let i = 0; i < DUST.length; i++) {
+    const p = DUST[i];
+    const swirl = t * 0.5 + i * 0.07;
+    const jx = Math.sin(swirl) * 0.05 * jitterAmp;
+    const jy = Math.cos(swirl * 1.3) * 0.05 * jitterAmp;
+    const jz = Math.sin(swirl * 0.7 + i) * 0.05 * jitterAmp;
+    const pr = project(p, R * breath, jx, jy, jz);
+    let nearest = FLUIDS[0], best = Infinity;
+    for (const f of FLUIDS) {
+      const ang = f.phase + t * f.speed;
+      const fx = cx + Math.cos(ang) * R * 0.45;
+      const fy = cy + Math.sin(ang * 1.2 + f.phase) * R * 0.45 * 0.6;
+      const dx = pr.sx - fx, dy = pr.sy - fy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < best) { best = d2; nearest = f; }
+    }
+    const r = (1.0 + pr.depth * 1.5) * (cur === 'listening' ? (1 + level * 0.35) : 1);
+    const a = (0.30 + pr.depth * 0.55) * (1 - cp.items * 0.30);
+    ctx.fillStyle = `hsla(${nearest.hue}, 90%, ${72 + pr.depth * 8}%, ${a})`;
+    ctx.beginPath(); ctx.arc(pr.sx, pr.sy, r, 0, TAU); ctx.fill();
+  }
+
+  /* NETWORK — edges between item nodes, pulses traveling along them.
+     Idle: faint web. Searching: bright web with random pulses (Gimi scanning
+     possibilities). Found: pulses propagate from match nodes outward. */
+  if (cp.net > 0.02) {
+    // pre-project all item nodes
+    const nodes = ITEM_PTS.map(p => project(p, R * breath));
+
+    // spawn random scan pulses while searching (kept light)
+    if (cur === 'processing' && Math.random() < 0.18) {
+      const edge = NETWORK_EDGES[Math.floor(Math.random() * NETWORK_EDGES.length)];
+      spawnPulse(edge[0], edge[1], 200 + Math.random() * 40, 720);
+    }
+
+    // edges
+    ctx.lineWidth = 1;
+    for (const [i, j] of NETWORK_EDGES) {
+      const a = nodes[i], b = nodes[j];
+      // back-facing edges still drawn but faint
+      const depthAvg = (a.depth + b.depth) / 2;
+      const edgeA = cp.net * (0.08 + depthAvg * 0.30);
+      ctx.strokeStyle = `rgba(181, 228, 255, ${edgeA})`;
+      ctx.beginPath();
+      ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy);
+      ctx.stroke();
+    }
+
+    // pulses traveling along edges
+    PULSES = PULSES.filter(p => {
+      const t = (now - p.startTime) / p.duration;
+      if (t >= 1) return false;
+      const a = ITEM_PTS[p.fromIdx], b = ITEM_PTS[p.toIdx];
+      const pos = project(
+        {
+          x: a.x + (b.x - a.x) * t,
+          y: a.y + (b.y - a.y) * t,
+          z: a.z + (b.z - a.z) * t
+        },
+        R * breath
+      );
+      // envelope: fade in / out at edges of life
+      const env = t < 0.15 ? t / 0.15 : (t > 0.85 ? (1 - t) / 0.15 : 1);
+      const alpha = env * (0.6 + pos.depth * 0.4) * cp.net;
+      // glow
+      const g = ctx.createRadialGradient(pos.sx, pos.sy, 0, pos.sx, pos.sy, 9);
+      g.addColorStop(0,   `hsla(${p.hue}, 100%, 92%, ${alpha})`);
+      g.addColorStop(0.4, `hsla(${p.hue}, 95%, 65%, ${alpha * 0.55})`);
+      g.addColorStop(1,   `hsla(${p.hue}, 95%, 55%, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(pos.sx, pos.sy, 9, 0, TAU); ctx.fill();
+      // core
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.beginPath(); ctx.arc(pos.sx, pos.sy, 2, 0, TAU); ctx.fill();
+      return true;
+    });
+
+    // node dots (each item position gets a small visible dot when net is on)
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      const isMatch = topMatches.indexOf(i) !== -1;
+      if (isMatch && cur === 'responding') continue; // handled by item-glyph code below
+      const a = cp.net * (0.35 + n.depth * 0.45);
+      ctx.fillStyle = `rgba(220, 240, 255, ${a})`;
+      ctx.beginPath(); ctx.arc(n.sx, n.sy, 1.5 + n.depth * 0.8, 0, TAU); ctx.fill();
+    }
+
+    // CLICK RINGS — expanding ripples at match nodes
+    CLICK_RINGS = CLICK_RINGS.filter(c => {
+      const t = (now - c.startTime) / c.duration;
+      if (t < 0) return true; // still in delay
+      if (t >= 1) return false;
+      const node = nodes[c.matchIdx];
+      if (!node || node.depth < 0.35) return true;
+      // two concentric rings staggered
+      for (let k = 0; k < 2; k++) {
+        const localT = Math.max(0, Math.min(1, t - k * 0.20));
+        if (localT === 0 || localT >= 1) continue;
+        const r = 6 + localT * 32;
+        const a = (1 - localT) * 0.6 * node.depth;
+        ctx.strokeStyle = `hsla(${c.hue}, 95%, 78%, ${a})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(node.sx, node.sy, r, 0, TAU); ctx.stroke();
+      }
+      // brief flash core at click moment
+      if (t < 0.25) {
+        const flashA = (1 - t / 0.25) * 0.7 * node.depth;
+        const g = ctx.createRadialGradient(node.sx, node.sy, 0, node.sx, node.sy, 14);
+        g.addColorStop(0, `hsla(${c.hue}, 100%, 92%, ${flashA})`);
+        g.addColorStop(1, `hsla(${c.hue}, 95%, 65%, 0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(node.sx, node.sy, 14, 0, TAU); ctx.fill();
+      }
+      return true;
+    });
+  }
+
+  /* items materialize ON the sphere during search.
+     During processing → small chromatic dots.
+     During responding → top matches grow LARGER with glyphs, briefly held
+     before being "released" toward the catalog (handled by streak layer in DOM).  */
+  const itemAlpha = cp.items;
+  if (itemAlpha > 0.02) {
+    const projItems = ITEMS.map((it, i) => {
+      const pr = project(ITEM_PTS[i], R * breath);
+      return { it, i, ...pr };
+    }).sort((a, b) => a.depth - b.depth);
+
+    for (const p of projItems) {
+      const isTop = topMatches.indexOf(p.i) !== -1;
+      const showGlyph = isTop && cur === 'responding' && burstT > 0.15;
+
+      // base size + extra growth on found (items grow and stay)
+      let sz;
+      if (isTop) {
+        if (cur === 'responding') {
+          const grow = Math.min(1, burstT * 2.2);
+          sz = (14 + grow * 14) * (0.7 + p.depth * 0.7);
+        } else {
+          sz = 20 * (0.7 + p.depth * 0.7);
+        }
+      } else {
+        sz = 11 * (0.7 + p.depth * 0.7);
+      }
+
+      const alpha = itemAlpha * (0.30 + p.depth * 0.70);
+
+      // halo behind top matches
+      if (isTop && cp.lineGlow > 0.1) {
+        const haloR = sz * (1.8 + Math.sin(t * 3 + p.i) * 0.15);
+        const g = ctx.createRadialGradient(p.sx, p.sy, sz * 0.4, p.sx, p.sy, haloR);
+        g.addColorStop(0, `hsla(${p.it.hue}, 95%, 70%, ${0.70 * cp.lineGlow * alpha})`);
+        g.addColorStop(1, `hsla(${p.it.hue}, 95%, 70%, 0)`);
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(p.sx, p.sy, haloR, 0, TAU); ctx.fill();
+      }
+
+      // chromatic dot
+      const g = ctx.createRadialGradient(p.sx - sz * 0.15, p.sy - sz * 0.2, 0, p.sx, p.sy, sz);
+      g.addColorStop(0,    `hsla(${p.it.hue}, 100%, 84%, ${alpha})`);
+      g.addColorStop(0.45, `hsla(${(p.it.hue + 40) % 360}, 95%, 60%, ${alpha * 0.85})`);
+      g.addColorStop(1,    `hsla(${(p.it.hue + 80) % 360}, 90%, 35%, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(p.sx, p.sy, sz, 0, TAU); ctx.fill();
+
+      // glyph on top of matched mini-tiles during responding burst
+      if (showGlyph && sz > 12 && p.depth > 0.45) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+        ctx.font = `${Math.round(sz * 0.85)}px ui-emoji, "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(p.it.glyph, p.sx, p.sy + sz * 0.04);
+        ctx.restore();
+      }
+    }
+
+    /* connecting lines between top matches at front */
+    if (cp.lineGlow > 0.1 && topMatches.length > 1) {
+      const proj = topMatches.map(i => ({ ...project(ITEM_PTS[i], R * breath), i }))
+                             .filter(p => p.depth > 0.45);
+      ctx.lineWidth = 1;
+      for (let i = 0; i < proj.length; i++) {
+        for (let j = i + 1; j < proj.length; j++) {
+          const a = proj[i], b = proj[j];
+          const op = 0.5 * cp.lineGlow * Math.min(a.depth, b.depth);
+          ctx.strokeStyle = `rgba(181, 228, 255, ${op})`;
+          ctx.beginPath();
+          ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
+  requestAnimationFrame(render);
+}
+requestAnimationFrame(render);
+
+/* ────────────────────────────────────────────────────────────────────
+   STREAK ANIMATION — items fly from Oracle into the catalog
+──────────────────────────────────────────────────────────────────── */
+const streakLayer = document.getElementById('streakLayer');
+function getScreenRect(el) { return el.getBoundingClientRect(); }
+function getStageRect()    { return streakLayer.getBoundingClientRect(); }
+
+function flyStreak(fromX, fromY, toX, toY, color, delay = 0, duration = 800, onArrive) {
+  const el = document.createElement('div');
+  el.className = 'streak';
+  el.style.setProperty('--col', color);
+  el.style.left = '0'; el.style.top = '0';
+  el.style.transform = `translate(${fromX}px, ${fromY}px) scale(1)`;
+  el.style.opacity = '0';
+  streakLayer.appendChild(el);
+
+  // bezier-ish curve via a perpendicular offset midpoint
+  const dx = toX - fromX, dy = toY - fromY;
+  const len = Math.hypot(dx, dy);
+  // outward perpendicular offset for arc
+  const nx = -dy / len, ny = dx / len;
+  const arc = Math.min(70, len * 0.25) * (Math.random() < 0.5 ? 1 : -1);
+  const mx = fromX + dx * 0.55 + nx * arc;
+  const my = fromY + dy * 0.55 + ny * arc;
+
+  const start = performance.now() + delay;
+  function tick(now) {
+    if (now < start) {
+      requestAnimationFrame(tick);
+      return;
+    }
+    const t = Math.min(1, (now - start) / duration);
+    // quadratic bezier (from → mid → to)
+    const u = 1 - t;
+    const x = u * u * fromX + 2 * u * t * mx + t * t * toX;
+    const y = u * u * fromY + 2 * u * t * my + t * t * toY;
+    const scale = 0.6 + (1 - Math.abs(t - 0.4) * 1.5) * 0.5;
+    const op = t < 0.1 ? t * 10 : (t > 0.85 ? (1 - t) / 0.15 : 1);
+    el.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+    el.style.opacity = String(Math.max(0, op));
+    if (t < 1) requestAnimationFrame(tick);
+    else { el.remove(); if (onArrive) onArrive(); }
+  }
+  requestAnimationFrame(tick);
+}
+
+function releaseMatchesToCatalog() {
+  if (!topMatches.length) return;
+  const stageRect = getStageRect();
+  const sphereRect = cv.getBoundingClientRect();
+  const fromX = sphereRect.left + sphereRect.width / 2 - stageRect.left;
+  const fromY = sphereRect.top  + sphereRect.height / 2 - stageRect.top;
+
+  topMatches.slice(0, 4).forEach((idx, i) => {
+    const item = ITEMS[idx];
+    const cell = document.querySelector(`.specimen[data-id="${item.id}"]`);
+    if (!cell) return;
+    const photoEl = cell.querySelector('.photo-wrap');
+    const r = photoEl.getBoundingClientRect();
+    const toX = r.left + r.width / 2 - stageRect.left;
+    const toY = r.top  + r.height / 2 - stageRect.top;
+    const color = `hsl(${item.hue}, 95%, 72%)`;
+    flyStreak(fromX, fromY, toX, toY, color, i * 110, 760, () => {
+      cell.classList.add('arriving');
+      setTimeout(() => cell.classList.remove('arriving'), 720);
+    });
+  });
+}
+
+/* ────────────────────────────────────────────────────────────────────
+   STATE  +  WIRING
+──────────────────────────────────────────────────────────────────── */
+const transcriptEl = document.getElementById('transcript');
+const replyEl      = document.getElementById('reply');
+const dotsEl       = document.getElementById('dots');
+const chatInput    = document.getElementById('chatInput');
+const chatMic      = document.getElementById('chatMic');
+const catScroll    = document.getElementById('catalogScroll');
+const metaEl       = document.getElementById('catalogMeta');
+
+let timers = [];
+function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+function later(ms, fn) { const id = setTimeout(fn, ms); timers.push(id); return id; }
+
+function ask(query) {
+  lastQuery = query;
+  clearTimers();
+  transcriptEl.innerHTML = '';
+  replyEl.innerHTML = '';
+  topMatches = []; bestIdx = -1;
+  highlightMatches([]);
+
+  setState('listening');
+  const words = query.split(' ');
+  words.forEach((w, i) => {
+    later(120 + i * 95, () => {
+      const span = document.createElement('span');
+      span.className = 'word';
+      span.textContent = (i ? ' ' : '') + w;
+      transcriptEl.appendChild(span);
+    });
+  });
+
+  const listenDur = 200 + words.length * 95 + 280;
+
+  later(listenDur, () => {
+    setState('processing');
+    const matches = matchItems(query);
+    const selectedMatches = matches.length ? matches : ITEMS.slice(0, 4);
+    topMatches = selectedMatches.slice(0, 4).map(m => ITEMS.indexOf(m));
+    bestIdx = topMatches[0] ?? -1;
+    let n = 0;
+    const tick = () => { n = (n + 1) % 4; dotsEl.textContent = '.'.repeat(n); later(280, tick); };
+    tick();
+  });
+
+  later(listenDur + 1200, () => {
+    setState('responding');
+    const r = REPLY(query);
+    replyEl.innerHTML = `${r.lead}<span class="glow">${r.glow}</span>`;
+    const matchIds = topMatches.map(i => ITEMS[i].id);
+
+    // first ensure first match is visible before streaks
+    const firstMatch = catScroll.querySelector(`.specimen[data-id="${matchIds[0]}"]`);
+    if (firstMatch) {
+      const r1 = firstMatch.getBoundingClientRect();
+      const cR = catScroll.getBoundingClientRect();
+      if (r1.left < cR.left + 40 || r1.right > cR.right - 40) {
+        catScroll.scrollBy({ left: r1.left - cR.left - 40, behavior: 'smooth' });
+      }
+      if (r1.top > cR.bottom - 100 || r1.bottom < cR.top + 80) {
+        catScroll.scrollBy({ top: r1.top - cR.top - 90, behavior: 'smooth' });
+      }
+    }
+
+    // 700ms after responding (matches show inside the sphere first),
+    // then the catalog highlights its matches — no movement.
+    later(700, () => {
+      highlightMatches(matchIds);
+      metaEl.textContent = `${matchIds.length} match${matchIds.length === 1 ? '' : 'es'}`;
+    });
+
+    // Let the chosen item appear inside the orb first, then move into checkout.
+    later(1450, () => {
+      const item = ITEMS[bestIdx];
+      if (!item) return;
+      replyEl.innerHTML = `Best match ready.<span class="glow"> Opening checkout.</span>`;
+      openSheet(item);
+    });
+  });
+
+  later(listenDur + 6500, () => {
+    setState('idle');
+    metaEl.textContent = `${ITEMS.length} items`;
+  });
+}
+
+document.querySelectorAll('.chip').forEach(el => {
+  el.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    ask(el.dataset.q);
+  });
+});
+
+const ELEVENLABS_SDK_URL = 'https://esm.sh/@elevenlabs/client';
+let elevenConversation = null;
+let elevenStarting = false;
+let elevenSearchTimer = null;
+
+function setVoiceButton(state) {
+  chatMic.classList.toggle('is-loading', state === 'loading');
+  chatMic.classList.toggle('is-live', state === 'live');
+}
+
+function showVoiceStatus(message, warn = false) {
+  clearTimers();
+  transcriptEl.innerHTML = '';
+  replyEl.innerHTML = `<span class="${warn ? 'warn' : 'glow'}">${message}</span>`;
+  setState('responding');
+  later(2600, () => setState('idle'));
+}
+
+function getElevenLabsAgentId() {
+  const params = new URLSearchParams(window.location.search);
+  return (
+    params.get('eleven_agent_id') ||
+    params.get('agent_id') ||
+    localStorage.getItem('gimi.elevenlabs.agentId') ||
+    window.GIMI_ELEVENLABS_AGENT_ID ||
+    ''
+  ).trim();
+}
+
+function textFromElevenMessage(message) {
+  return String(
+    message?.message ||
+    message?.text ||
+    message?.transcript ||
+    message?.content ||
+    message?.audio_event?.transcript ||
+    ''
+  ).trim();
+}
+
+function isUserElevenMessage(message) {
+  const role = String(message?.role || message?.source || message?.speaker || '').toLowerCase();
+  return role.includes('user') || role.includes('human') || role.includes('client');
+}
+
+async function getElevenLabsSessionOptions() {
+  try {
+    const tokenRes = await fetch('/api/elevenlabs/conversation-token', { cache: 'no-store' });
+    if (tokenRes.ok) {
+      const data = await tokenRes.json();
+      if (data.conversationToken) return { conversationToken: data.conversationToken };
+    }
+  } catch (_) {
+    // Static previews can run without the Next API route.
+  }
+
+  const agentId = getElevenLabsAgentId();
+  return agentId ? { agentId } : null;
+}
+
+async function startElevenLabsVoice() {
+  if (elevenConversation) {
+    await elevenConversation.endSession();
+    elevenConversation = null;
+    setVoiceButton('idle');
+    showVoiceStatus('Voice session ended.');
+    return true;
+  }
+  if (elevenStarting) return true;
+
+  const sessionOptions = await getElevenLabsSessionOptions();
+  if (!sessionOptions) {
+    showVoiceStatus('Set ELEVENLABS_AGENT_ID or add ?eleven_agent_id=... to enable voice.', true);
+    return false;
+  }
+
+  elevenStarting = true;
+  setVoiceButton('loading');
+  showVoiceStatus('Opening ElevenLabs voice...');
+
+  try {
+    await navigator.mediaDevices?.getUserMedia?.({ audio: true });
+    const { Conversation } = await import(ELEVENLABS_SDK_URL);
+    elevenConversation = await Conversation.startSession({
+      ...sessionOptions,
+      onConnect: () => {
+        setVoiceButton('live');
+        showVoiceStatus('ElevenLabs voice is live. Tell Gimi what you need.');
+      },
+      onDisconnect: () => {
+        elevenConversation = null;
+        setVoiceButton('idle');
+      },
+      onMessage: (message) => {
+        const text = textFromElevenMessage(message);
+        if (!text) return;
+        if (isUserElevenMessage(message)) {
+          chatInput.value = text;
+          clearTimeout(elevenSearchTimer);
+          elevenSearchTimer = setTimeout(() => {
+            ask(text);
+            chatInput.value = '';
+          }, 550);
+        }
+      },
+      onError: () => {
+        showVoiceStatus('ElevenLabs voice failed to start. Check agent config.', true);
+        setVoiceButton('idle');
+      },
+    });
+    return true;
+  } catch (err) {
+    showVoiceStatus('Microphone or ElevenLabs session was blocked.', true);
+    setVoiceButton('idle');
+    return false;
+  } finally {
+    elevenStarting = false;
+  }
+}
+
+chatMic.addEventListener('click', async () => {
+  const text = chatInput.value.trim();
+  if (text) { ask(text); chatInput.value = ''; return; }
+  await startElevenLabsVoice();
+});
+chatInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && chatInput.value.trim()) {
+    ask(chatInput.value.trim());
+    chatInput.value = '';
+  }
+});
+cv.addEventListener('click', () => {
+  if (cur !== 'idle') return;
+  const samples = ['Need a drill for DIY', 'Kayak on the lake', 'Throwing a birthday party'];
+  ask(samples[Math.floor(Math.random() * samples.length)]);
+});
+
+/* ────────────────────────────────────────────────────────────────────
+   ITEM DETAIL SHEET
+──────────────────────────────────────────────────────────────────── */
+const sheetBackdrop  = document.getElementById('sheetBackdrop');
+const itemSheet      = document.getElementById('itemSheet');
+const sheetClose     = document.getElementById('sheetClose');
+const sheetHeroGlow  = document.getElementById('sheetHeroGlow');
+const sheetHeroPhoto = document.getElementById('sheetHeroPhoto');
+const sheetName      = document.getElementById('sheetName');
+const sheetMeta      = document.getElementById('sheetMeta');
+const sheetPrice     = document.getElementById('sheetPrice');
+const sheetCTA       = document.getElementById('sheetCTA');
+const sheetCTASub    = document.getElementById('sheetCTASub');
+const sheetSimilar   = document.getElementById('sheetSimilar');
+const durationOptions = document.getElementById('durationOptions');
+const rentalLengthTotal = document.getElementById('rentalLengthTotal');
+const paymentOptions = document.getElementById('paymentOptions');
+const sheetContent   = document.querySelector('.sheet-content');
+const navWallet      = document.getElementById('navWallet');
+const profileSheet   = document.getElementById('profileSheet');
+const profileClose   = document.getElementById('profileClose');
+const profileWallet  = document.getElementById('profileWallet');
+const profileTabs    = document.querySelectorAll('.profile-tab');
+const borrowingPane  = document.getElementById('borrowingPane');
+const lendingPane    = document.getElementById('lendingPane');
+const listingPane    = document.getElementById('listingPane');
+const lendingStatus  = document.getElementById('lendingStatus');
+const listingStatus  = document.getElementById('listingStatus');
+const listingForm    = document.getElementById('listingForm');
+const listingSubmit  = document.getElementById('listingSubmit');
+const listingPhotoFile = document.getElementById('listingPhotoFile');
+const activeRentalsPanel = document.getElementById('activeRentalsPanel');
+const rentalReceiptsPanel = document.getElementById('rentalReceiptsPanel');
+const lendingRentalsPanel = document.getElementById('lendingRentalsPanel');
+const ownerInventoryPanel = document.getElementById('ownerInventoryPanel');
+const notificationsPanel = document.getElementById('notificationsPanel');
+const profileEvidencePanel = document.getElementById('profileEvidencePanel');
+let connectedWallet = '';
+let connectedWalletSource = '';
+let pendingOwnerProof = null;
+let activeSheetItem = null;
+let lastQuery = '';
+let selectedRentalHours = 3;
+let selectedPaymentMethod = 'card';
+let latestLendingRentals = [];
+let latestOwnerCardReservations = [];
+let latestOwnerInventory = [];
+const WALLET_SESSION_KEY = 'gimi.walletSession';
+const ACTIVE_RENTALS_CACHE_KEY = 'gimi.activeRentals';
+const PENDING_SETTLEMENT_KEY = 'gimi.pendingRentalSettlement';
+const PENDING_LISTING_KEY = 'gimi.pendingListingPublish';
+const PENDING_CARD_RECEIPT_KEY = 'gimi.pendingCardReceipt';
+
+const ITEM_TO_RENTPROOF = Object.fromEntries(ITEMS.map((item) => [item.id, item.id]));
+
+function shortWallet(address) {
+  return address ? `${address.slice(0, 4)}…${address.slice(-4)}` : '';
+}
+
+function saveWalletSession(address, source = 'privy') {
+  if (!address) return;
+  connectedWallet = String(address);
+  connectedWalletSource = source;
+  try {
+    window.localStorage.setItem(
+      WALLET_SESSION_KEY,
+      JSON.stringify({ address: connectedWallet, source, savedAt: Date.now() })
+    );
+  } catch (_) {}
+  updateWalletUI();
+}
+
+function hydrateWalletSession() {
+  try {
+    const raw = window.localStorage.getItem(WALLET_SESSION_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed?.address) return;
+    connectedWallet = String(parsed.address);
+    connectedWalletSource = String(parsed.source || 'privy');
+  } catch (_) {}
+  updateWalletUI();
+}
+
+function updateWalletUI() {
+  if (navWallet) {
+    navWallet.textContent = connectedWallet ? `My rentals · ${shortWallet(connectedWallet)}` : 'Connect wallet';
+    navWallet.classList.toggle('is-connected', Boolean(connectedWallet));
+  }
+  if (profileWallet) {
+    profileWallet.textContent = connectedWallet ? `Wallet ${shortWallet(connectedWallet)}` : 'Connect wallet';
+  }
+  if (sheetCTA) updateCheckoutCTA();
+}
+
+function setProfileTab(tab) {
+  const nextTab = tab === 'lending' || tab === 'listing' ? tab : 'borrowing';
+  profileTabs.forEach((button) => {
+    const isActive = button.dataset.profileTab === nextTab;
+    button.classList.toggle('is-active', isActive);
+    button.setAttribute('aria-selected', String(isActive));
+  });
+  borrowingPane?.classList.toggle('is-active', nextTab === 'borrowing');
+  lendingPane?.classList.toggle('is-active', nextTab === 'lending');
+  listingPane?.classList.toggle('is-active', nextTab === 'listing');
+}
+
+function setProfileStatus(element, message = '', tone = 'pending') {
+  if (!element) return;
+  element.textContent = message;
+  element.classList.toggle('is-visible', Boolean(message));
+  element.classList.toggle('is-error', tone === 'error');
+  element.classList.toggle('is-success', tone === 'success');
+}
+
+function setLendingStatus(message = '', tone = 'pending') {
+  setProfileStatus(lendingStatus, message, tone);
+}
+
+function setListingStatus(message = '', tone = 'pending') {
+  setProfileStatus(listingStatus, message, tone);
+}
+
+function formatRentalTime(seconds) {
+  const date = new Date(Number(seconds) * 1000);
+  if (!Number.isFinite(date.getTime())) return 'Pending';
+  return date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function formatUsdcAmount(amount) {
+  if (!amount) return '0 USDC';
+  if (typeof amount === 'object' && amount.uiAmount !== undefined) return `${amount.uiAmount} USDC`;
+  const value = Number(amount) / 1_000_000;
+  if (!Number.isFinite(value)) return '0 USDC';
+  return `${value.toLocaleString([], { maximumFractionDigits: 2 })} USDC`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
+function glyphForItemId(itemId) {
+  return ITEMS.find((item) => item.id === itemId)?.glyph || '📦';
+}
+
+function readLocalActiveRentals() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(ACTIVE_RENTALS_CACHE_KEY) || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function writeLocalActiveRental(rental) {
+  try {
+    const existing = readLocalActiveRentals().filter((entry) => entry.rentalId !== rental.rentalId);
+    window.localStorage.setItem(ACTIVE_RENTALS_CACHE_KEY, JSON.stringify([rental, ...existing].slice(0, 8)));
+  } catch (_) {}
+}
+
+function replaceLocalActiveRentals(rentals) {
+  try {
+    window.localStorage.setItem(ACTIVE_RENTALS_CACHE_KEY, JSON.stringify(rentals.slice(0, 8)));
+  } catch (_) {}
+}
+
+function readUsdcNumber(amount, unit = 'auto') {
+  if (!amount) return 0;
+  if (typeof amount.uiAmount === 'string') return Number(amount.uiAmount) || 0;
+  if (typeof amount === 'number') return Number.isFinite(amount) ? amount : 0;
+  if (typeof amount === 'string') {
+    if (unit === 'ui') {
+      const value = Number(amount);
+      return Number.isFinite(value) ? value : 0;
+    }
+    try {
+      return Number(BigInt(amount)) / 1_000_000;
+    } catch (_) {
+      return 0;
+    }
+  }
+  return 0;
+}
+
+function formatUsdcEstimate(value) {
+  if (!Number.isFinite(value) || value <= 0) return '0 USDC';
+  return `${value.toLocaleString([], { minimumFractionDigits: value < 10 ? 2 : 0, maximumFractionDigits: 2 })} USDC`;
+}
+
+function rentalEscrowEconomics(rental) {
+  const item = rental.item || {};
+  const startTs = Number(rental.startTs || 0);
+  const elapsedSeconds = startTs > 0 ? Math.max(0, Math.floor(Date.now() / 1000) - startTs) : 0;
+  const ratePerHour = Number(item.ratePerHour ?? rental.ratePerHour ?? 0);
+  const minimumFee = Number(item.minimumFee ?? rental.minimumFee ?? 0);
+  const escrow = readUsdcNumber(rental.amounts?.escrow)
+    || readUsdcNumber(rental.escrowAmount, 'raw')
+    || Number(item.buyoutCap ?? rental.buyoutCap ?? 0);
+  const buyoutCap = Number(item.buyoutCap ?? rental.buyoutCap ?? escrow);
+  const cap = escrow || buyoutCap || 0;
+  const expectedFeeAtStart = readUsdcNumber(rental.amounts?.expectedFeeAtStart)
+    || readUsdcNumber(rental.expectedFeeAtStart, 'raw');
+  const meteredFee = ratePerHour > 0 && elapsedSeconds > 0
+    ? ratePerHour * (elapsedSeconds / 3600)
+    : expectedFeeAtStart;
+  const rentAccrued = cap > 0 ? Math.min(cap, Math.max(minimumFee, meteredFee)) : Math.max(minimumFee, meteredFee);
+  const refundNow = Math.max(0, cap - rentAccrued);
+
+  return {
+    rentAccrued,
+    refundNow,
+  };
+}
+
+function activeLocalRentalsForWallet(wallet, settledRentalIds = new Set()) {
+  const allRentals = readLocalActiveRentals();
+  const freshRentals = allRentals.filter((rental) => {
+    if (Date.now() - Number(rental.savedAt || 0) >= 10 * 60 * 1000) return false;
+    if (settledRentalIds.has(rental.rentalId)) return false;
+    return true;
+  });
+  if (freshRentals.length !== allRentals.length) replaceLocalActiveRentals(freshRentals);
+  return freshRentals.filter((rental) => rental.renterWallet === wallet);
+}
+
+function renderCardReservations(reservations) {
+  return reservations.map((reservation) => {
+    const item = reservation.item || {};
+    const glyph = glyphForItemId(reservation.itemId);
+    const pickup = item.locationLabel || 'Owner pickup point';
+    const rail = reservation.paymentMethod === 'base_mcp' ? 'Base MCP' : 'Card';
+    const status = reservation.sessionStatus === 'active'
+      ? `${rail} funded · active`
+      : reservation.sessionStatus === 'returned'
+        ? reservation.receiptStatus === 'issued' ? 'Returned · receipt issued' : 'Returned · receipt pending'
+      : reservation.paymentStatus === 'confirmed'
+        ? `${rail} funded · reserved`
+      : reservation.paymentStatus === 'requires_action'
+        ? `Waiting for ${rail} checkout`
+        : `${rail} ${reservation.paymentStatus || 'intent'}`;
+    const escrow = reservation.escrowStatus === 'provider_captured'
+      ? 'Captured by provider'
+      : reservation.escrowStatus === 'provider_authorized'
+        ? 'Authorized by provider'
+        : 'Not funded yet';
+    const total = reservation.sessionStatus === 'returned' && reservation.amounts?.renterRefund
+      ? `Refund ${reservation.amounts.renterRefund.uiAmount} ${reservation.amounts.renterRefund.symbol || 'USD'}`
+      : reservation.amounts?.total
+      ? `${reservation.amounts.total.uiAmount} ${reservation.amounts.total.symbol || 'USD'}`
+      : 'Pending';
+    return `
+      <div class="active-rental-card">
+        <div class="active-rental-head">
+          <div class="active-rental-glyph">${escapeHtml(glyph)}</div>
+          <div>
+            <div class="active-rental-name">${escapeHtml(item.name || reservation.itemName || 'Rental item')}</div>
+            <div class="active-rental-sub">${escapeHtml(status)} · ${escapeHtml(reservation.id || 'intent')}</div>
+          </div>
+        </div>
+        <div class="rental-detail-grid">
+          <div class="rental-detail"><span>Pickup</span><strong>${escapeHtml(pickup)}</strong></div>
+          <div class="rental-detail"><span>Payment</span><strong>${escapeHtml(escrow)}</strong></div>
+          <div class="rental-detail"><span>Duration</span><strong>${escapeHtml(formatDuration(reservation.durationHours || selectedRentalHours))}</strong></div>
+          <div class="rental-detail"><span>Total hold</span><strong>${escapeHtml(total)}</strong></div>
+        </div>
+        ${renderProvenance(reservation.provenance)}
+        ${renderExecutionTimeline(reservation.timeline || [])}
+        <div class="rental-escrow-note">${escapeHtml(rail)}-funded rentals reserve the item through a provider rail. After return settlement, Gimi records the payout/refund receipt in history.</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderActiveRentals(rentals, cardReservations = []) {
+  if (!activeRentalsPanel) return;
+  if (!rentals.length && !cardReservations.length) {
+    activeRentalsPanel.innerHTML = '<div class="empty-profile-card">No active rentals yet. Ask Gimi for something nearby and start checkout.</div>';
+    return;
+  }
+  const rentalCards = rentals.map((rental) => {
+    const item = rental.item || {};
+    const glyph = rental.glyph || glyphForItemId(rental.itemId);
+    const pickup = item.locationLabel || rental.pickupLocation || 'Owner pickup point';
+    const owner = item.ownerName || rental.ownerName || rental.ownerWalletShort || 'Owner';
+    const due = rental.dueTs ? formatRentalTime(rental.dueTs) : 'After checkout confirms';
+    const escrow = formatUsdcAmount(rental.amounts?.escrow || rental.escrowAmount);
+    const economics = rentalEscrowEconomics(rental);
+    return `
+      <div class="active-rental-card">
+        <div class="active-rental-head">
+          <div class="active-rental-glyph">${escapeHtml(glyph)}</div>
+          <div>
+            <div class="active-rental-name">${escapeHtml(item.name || rental.itemName || 'Rental item')}</div>
+            <div class="active-rental-sub">Active rental · ${escapeHtml(rental.rentalId || 'pending')}</div>
+          </div>
+        </div>
+        <div class="rental-detail-grid">
+          <div class="rental-detail"><span>Pickup</span><strong>${escapeHtml(pickup)}</strong></div>
+          <div class="rental-detail"><span>Owner</span><strong>${escapeHtml(owner)}</strong></div>
+          <div class="rental-detail"><span>Return by</span><strong>${escapeHtml(due)}</strong></div>
+          <div class="rental-detail"><span>Escrow locked</span><strong>${escapeHtml(escrow)}</strong></div>
+          <div class="rental-detail"><span>Rent accrued</span><strong>${escapeHtml(formatUsdcEstimate(economics.rentAccrued))}</strong></div>
+          <div class="rental-detail"><span>Refund est.</span><strong>${escapeHtml(formatUsdcEstimate(economics.refundNow))}</strong></div>
+        </div>
+        <div class="rental-escrow-note">Estimated rent accrues inside escrow every hour. The host receives payout after return confirmation; the rest is refunded to you.</div>
+        <div class="rental-return-note">You can return early at ${escapeHtml(pickup)}. Once the owner confirms return, Gimi closes the rental token, pays accrued rent, and releases the refund.</div>
+      </div>
+    `;
+  }).join('');
+  activeRentalsPanel.innerHTML = `${rentalCards}${renderCardReservations(cardReservations)}`;
+}
+
+function renderOwnerCardReservations(reservations) {
+  return reservations.map((reservation) => {
+    const item = reservation.item || {};
+    const glyph = glyphForItemId(reservation.itemId);
+    const rail = reservation.paymentMethod === 'base_mcp' ? 'Base MCP' : 'Card';
+    const renter = reservation.renterWallet ? shortWallet(reservation.renterWallet) : `${rail} renter`;
+    const pickup = item.locationLabel || 'Owner pickup point';
+    const total = reservation.amounts?.total
+      ? `${reservation.amounts.total.uiAmount} ${reservation.amounts.total.symbol || 'USD'}`
+      : 'Pending';
+    const funded = reservation.paymentStatus === 'confirmed' &&
+      (reservation.escrowStatus === 'provider_authorized' || reservation.escrowStatus === 'provider_captured');
+    const isActive = reservation.sessionStatus === 'active';
+    const isReturned = reservation.sessionStatus === 'returned';
+    const receiptIssued = reservation.receiptStatus === 'issued';
+    const status = receiptIssued ? 'Returned · receipt issued' : isReturned ? 'Returned · receipt pending' : isActive ? `${rail} rental active` : funded ? `${rail} funded · handoff pending` : `Waiting for ${rail} payment`;
+    return `
+      <div class="active-rental-card" data-intent-id="${escapeHtml(reservation.id || '')}">
+        <div class="active-rental-head">
+          <div class="active-rental-glyph">${escapeHtml(glyph)}</div>
+          <div>
+            <div class="active-rental-name">${escapeHtml(item.name || reservation.itemName || 'Rental item')}</div>
+            <div class="active-rental-sub">${escapeHtml(status)} · ${escapeHtml(reservation.id || 'intent')}</div>
+          </div>
+        </div>
+        <div class="rental-detail-grid">
+          <div class="rental-detail"><span>Renter</span><strong>${escapeHtml(renter)}</strong></div>
+          <div class="rental-detail"><span>Pickup</span><strong>${escapeHtml(pickup)}</strong></div>
+          <div class="rental-detail"><span>Payment</span><strong>${escapeHtml(reservation.escrowStatus || 'pending')}</strong></div>
+          <div class="rental-detail"><span>Total hold</span><strong>${escapeHtml(total)}</strong></div>
+          ${isReturned ? `
+            <div class="rental-detail"><span>Host payout</span><strong>${escapeHtml(reservation.amounts?.ownerPayout?.uiAmount || '0')} ${escapeHtml(reservation.amounts?.ownerPayout?.symbol || 'USD')}</strong></div>
+            <div class="rental-detail"><span>Refund</span><strong>${escapeHtml(reservation.amounts?.renterRefund?.uiAmount || '0')} ${escapeHtml(reservation.amounts?.renterRefund?.symbol || 'USD')}</strong></div>
+          ` : ''}
+        </div>
+        ${renderProvenance(reservation.provenance)}
+        ${renderExecutionTimeline(reservation.timeline || [])}
+        <div class="owner-action-row">
+          <button class="owner-settle-btn card-handoff-btn" type="button" data-intent-id="${escapeHtml(reservation.id || '')}" ${funded && !isActive && !isReturned ? '' : 'disabled'}>
+            ${isReturned ? 'Returned' : isActive ? 'Handoff complete' : 'Mark handed off'}
+          </button>
+          <button class="owner-settle-btn is-secondary card-return-btn" type="button" data-intent-id="${escapeHtml(reservation.id || '')}" ${isActive ? '' : 'disabled'}>
+            ${isReturned ? 'Return settled' : 'Confirm return'}
+          </button>
+          <button class="owner-settle-btn card-receipt-btn" type="button" data-intent-id="${escapeHtml(reservation.id || '')}" ${isReturned && !receiptIssued ? '' : 'disabled'}>
+            ${receiptIssued ? 'Receipt issued' : 'Issue Solana receipt'}
+          </button>
+        </div>
+        <div class="rental-return-note">This is a ${escapeHtml(rail)}-funded reservation. Mark handed off after pickup, then confirm return to record payout/refund amounts and receipt history.</div>
+      </div>
+    `;
+  }).join('');
+}
+
+const EXECUTION_STEP_LABELS = {
+  intent_received: 'Intent received',
+  inventory_searched: 'Inventory checked',
+  offer_selected: 'Offer selected',
+  terms_drafted: 'Terms drafted',
+  approval_requested: 'Approval requested',
+  rental_funded: 'Rental funded',
+  handoff_confirmed: 'Handoff confirmed',
+  return_confirmed: 'Return confirmed',
+  settlement_completed: 'Settlement completed',
+  receipt_issued: 'Receipt issued',
+};
+
+function renderProvenance(provenance) {
+  if (!provenance) return '';
+  return `
+    <div class="provenance-row" aria-label="Activity provenance">
+      <span class="provenance-badge">${escapeHtml(provenance.environment || 'unknown')}</span>
+      <span class="provenance-badge">${escapeHtml((provenance.activityType || 'unknown').replaceAll('_', ' '))}</span>
+      <span class="provenance-badge">${escapeHtml((provenance.paymentMode || 'unknown').replaceAll('_', ' '))}</span>
+    </div>
+  `;
+}
+
+function renderExecutionTimeline(events) {
+  if (!events.length) return '';
+  return `
+    <details class="execution-timeline">
+      <summary>Agent activity <span>${events.length} steps</span></summary>
+      <ol>
+        ${events.map((event) => `
+          <li class="execution-step is-${escapeHtml(event.status || 'waiting')}">
+            <div class="execution-step-head">
+              <span>${escapeHtml(EXECUTION_STEP_LABELS[event.step] || event.step || 'Activity')}</span>
+              <time datetime="${escapeHtml(event.createdAt || '')}">${escapeHtml(formatExecutionTime(event.createdAt))}</time>
+            </div>
+            <div class="execution-step-meta">${escapeHtml(event.actor || 'agent')} · ${escapeHtml(event.tool || 'tool')}${executionApprovalLabel(event)}</div>
+            <div class="execution-step-copy">${escapeHtml(event.summary || '')}</div>
+          </li>
+        `).join('')}
+      </ol>
+    </details>
+  `;
+}
+
+function formatExecutionTime(value) {
+  const date = new Date(value || 0);
+  if (Number.isNaN(date.getTime())) return 'Unknown time';
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function executionApprovalLabel(event) {
+  if (!event.approvalRequired) return '';
+  if (event.status !== 'completed' && event.status !== 'recovered') return ' · approval required';
+  return event.paymentMode === 'simulated' ? ' · simulated approval' : ' · human approved';
+}
+
+function renderFunnelSummary(funnel, traceStatus = 'recorded') {
+  if (!profileEvidencePanel) return;
+  if (traceStatus === 'unavailable') {
+    profileEvidencePanel.innerHTML = '<div class="profile-evidence-copy">Execution evidence is temporarily unavailable. No activity count is being inferred.</div>';
+    return;
+  }
+  if (!funnel) {
+    profileEvidencePanel.innerHTML = '<div class="profile-evidence-copy">No execution evidence is available for this wallet yet.</div>';
+    return;
+  }
+  const stages = funnel.stageCounts || {};
+  const activity = funnel.activityCounts || {};
+  const demoCount = Number(activity.seeded_demo || 0) + Number(activity.internal_test || 0);
+  profileEvidencePanel.innerHTML = `
+    <div class="profile-evidence-head">
+      <div class="profile-evidence-title">Pilot evidence</div>
+      <span class="provenance-badge">separated metrics</span>
+    </div>
+    <div class="profile-evidence-copy">${escapeHtml(funnel.statement || 'Demo and pilot activity are reported separately.')}</div>
+    <div class="profile-evidence-grid">
+      <div class="profile-evidence-stat"><strong>${escapeHtml(String(stages.intent_received || 0))}</strong><span>Intents</span></div>
+      <div class="profile-evidence-stat"><strong>${escapeHtml(String(stages.rental_funded || 0))}</strong><span>Funded</span></div>
+      <div class="profile-evidence-stat"><strong>${escapeHtml(String(stages.receipt_issued || 0))}</strong><span>Receipts</span></div>
+    </div>
+    <div class="provenance-row">
+      <span class="provenance-badge">${escapeHtml(String(funnel.commercialIntentCount || 0))} commercial intents</span>
+      <span class="provenance-badge">${escapeHtml(String(demoCount))} demo/test events</span>
+    </div>
+  `;
+}
+
+function renderLendingRentals(rentals, cardReservations = []) {
+  if (!lendingRentalsPanel) return;
+  latestLendingRentals = rentals;
+  latestOwnerCardReservations = cardReservations;
+  if (!rentals.length && !cardReservations.length) {
+    lendingRentalsPanel.innerHTML = '<div class="empty-profile-card">No active lending sessions yet. When someone rents your item, it appears here for return settlement.</div>';
+    return;
+  }
+  const onchainCards = rentals.map((rental) => {
+    const item = rental.item || {};
+    const glyph = rental.glyph || glyphForItemId(rental.itemId);
+    const renter = rental.renterWalletShort || shortWallet(rental.renterWallet) || 'Renter';
+    const pickup = item.locationLabel || rental.pickupLocation || 'Owner pickup point';
+    const due = rental.dueTs ? formatRentalTime(rental.dueTs) : 'After checkout confirms';
+    const escrow = formatUsdcAmount(rental.amounts?.escrow || rental.escrowAmount);
+    const economics = rentalEscrowEconomics(rental);
+    return `
+      <div class="active-rental-card" data-rental-id="${escapeHtml(rental.rentalId || '')}">
+        <div class="active-rental-head">
+          <div class="active-rental-glyph">${escapeHtml(glyph)}</div>
+          <div>
+            <div class="active-rental-name">${escapeHtml(item.name || rental.itemName || 'Rental item')}</div>
+            <div class="active-rental-sub">Lending · ${escapeHtml(rental.rentalId || 'pending')}</div>
+          </div>
+        </div>
+        <div class="rental-detail-grid">
+          <div class="rental-detail"><span>Renter</span><strong>${escapeHtml(renter)}</strong></div>
+          <div class="rental-detail"><span>Pickup</span><strong>${escapeHtml(pickup)}</strong></div>
+          <div class="rental-detail"><span>Due</span><strong>${escapeHtml(due)}</strong></div>
+          <div class="rental-detail"><span>Escrow locked</span><strong>${escapeHtml(escrow)}</strong></div>
+          <div class="rental-detail"><span>Accrued rent</span><strong>${escapeHtml(formatUsdcEstimate(economics.rentAccrued))}</strong></div>
+          <div class="rental-detail"><span>Renter refund est.</span><strong>${escapeHtml(formatUsdcEstimate(economics.refundNow))}</strong></div>
+        </div>
+        <div class="owner-action-row">
+          <button class="owner-settle-btn" type="button" data-kind="return" data-rental-id="${escapeHtml(rental.rentalId || '')}">Confirm return</button>
+          <button class="owner-settle-btn is-secondary" type="button" data-kind="buyout" data-rental-id="${escapeHtml(rental.rentalId || '')}">Auto-buyout</button>
+        </div>
+        <div class="rental-return-note">Confirm return pays accrued rent from escrow and makes the listing available again. Auto-buyout is only valid after due time plus grace.</div>
+      </div>
+    `;
+  }).join('');
+  lendingRentalsPanel.innerHTML = `${onchainCards}${renderOwnerCardReservations(cardReservations)}`;
+}
+
+function renderReceipts(receipts) {
+  if (!rentalReceiptsPanel) return;
+  if (!receipts.length) {
+    rentalReceiptsPanel.innerHTML = '<div class="empty-profile-card">Receipts appear after return or auto-buyout settlement.</div>';
+    return;
+  }
+  rentalReceiptsPanel.innerHTML = receipts.map((receipt) => `
+    <div class="receipt-card">
+      <strong>${escapeHtml(receipt.item?.name || receipt.itemId)}</strong>
+      ${escapeHtml(receipt.outcome === 'returned_ok' ? 'Returned successfully' : 'Auto-buyout')} · Refund ${escapeHtml(formatUsdcAmount(receipt.amounts?.renterRefund))}
+    </div>
+  `).join('');
+}
+
+function renderNotifications(notifications) {
+  if (!notificationsPanel) return;
+  if (!notifications.length) {
+    notificationsPanel.innerHTML = '<div class="empty-profile-card">Important rental updates will appear here.</div>';
+    return;
+  }
+  notificationsPanel.innerHTML = notifications.map((notification) => `
+    <div class="receipt-card">
+      <strong>${escapeHtml(notification.title || 'Update')}</strong>
+      ${escapeHtml(notification.body || '')}
+    </div>
+  `).join('');
+}
+
+async function refreshNotifications() {
+  if (!notificationsPanel) return;
+  if (!connectedWallet) {
+    renderNotifications([]);
+    renderFunnelSummary(null);
+    return;
+  }
+  try {
+    const res = await fetch(`/api/notifications?wallet=${encodeURIComponent(connectedWallet)}&limit=8`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Could not load notifications');
+    renderNotifications(data.notifications || []);
+  } catch (_) {
+    renderNotifications([]);
+  }
+}
+
+function renderOwnerInventory(listings) {
+  if (!ownerInventoryPanel) return;
+  latestOwnerInventory = listings || [];
+  if (!latestOwnerInventory.length) {
+    ownerInventoryPanel.innerHTML = '<div class="empty-profile-card">No owner listings yet. Initialize an item below to publish it into inventory.</div>';
+    return;
+  }
+  ownerInventoryPanel.innerHTML = latestOwnerInventory.map((listing) => {
+    const isAvailable = listing.status === 'available';
+    const canToggle = listing.status === 'available' || listing.status === 'paused';
+    const rate = Number(listing.ratePerHour || 0);
+    return `
+      <div class="active-rental-card owner-inventory-card" data-listing-id="${escapeHtml(listing.id || '')}">
+        <div class="active-rental-head">
+          <div class="active-rental-glyph">📦</div>
+          <div>
+            <div class="active-rental-name">${escapeHtml(listing.name || 'Listed item')}</div>
+            <div class="active-rental-sub">${escapeHtml(listing.status || 'available')} · ${escapeHtml(listing.id || '')}</div>
+          </div>
+        </div>
+        <div class="rental-detail-grid">
+          <div class="rental-detail"><span>Pickup</span><strong>${escapeHtml(listing.locationLabel || 'Owner pickup point')}</strong></div>
+          <div class="rental-detail"><span>Rate</span><strong>${escapeHtml(rate ? `$${rate}/h` : 'Pending')}</strong></div>
+          <div class="rental-detail"><span>Escrow cap</span><strong>${escapeHtml(listing.buyoutCap ? `$${listing.buyoutCap}` : 'Pending')}</strong></div>
+          <div class="rental-detail"><span>Item PDA</span><strong>${escapeHtml(shortWallet(listing.itemPda || ''))}</strong></div>
+        </div>
+        <div class="owner-action-row">
+          <button class="owner-settle-btn owner-inventory-toggle-btn" type="button" data-listing-id="${escapeHtml(listing.id || '')}" data-next-status="${isAvailable ? 'paused' : 'available'}" ${canToggle ? '' : 'disabled'}>
+            ${isAvailable ? 'Pause listing' : listing.status === 'paused' ? 'Make available' : 'Locked by rental'}
+          </button>
+        </div>
+        <div class="rental-return-note">Paused items stay in your inventory but disappear from renter search until you make them available again.</div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function refreshOwnerInventory() {
+  if (!ownerInventoryPanel) return;
+  if (!connectedWallet) {
+    renderOwnerInventory([]);
+    return;
+  }
+  ownerInventoryPanel.innerHTML = '<div class="empty-profile-card">Loading your inventory...</div>';
+  try {
+    const res = await fetch(`/api/listings?ownerWallet=${encodeURIComponent(connectedWallet)}&limit=20`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Could not load owner inventory');
+    renderOwnerInventory(data.listings || []);
+  } catch (error) {
+    ownerInventoryPanel.innerHTML = `<div class="empty-profile-card">${escapeHtml(error instanceof Error ? error.message : 'Could not load owner inventory')}</div>`;
+  }
+}
+
+async function updateOwnerListingStatus(listingId, nextStatus, button) {
+  if (!connectedWallet) {
+    requestPrivyAction('connect');
+    return;
+  }
+  const originalText = button?.textContent || '';
+  if (button) {
+    button.disabled = true;
+    button.textContent = nextStatus === 'paused' ? 'Pausing...' : 'Publishing...';
+  }
+  setListingStatus(nextStatus === 'paused' ? 'Pausing listing...' : 'Making listing available...', 'pending');
+  try {
+    const res = await fetch('/api/listings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: listingId,
+        ownerWallet: connectedWallet,
+        status: nextStatus,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Could not update listing');
+    setListingStatus(`${data.listing?.name || 'Listing'} is now ${data.listing?.status || nextStatus}.`, 'success');
+    await refreshOwnerInventory();
+  } catch (error) {
+    setListingStatus(error instanceof Error ? error.message : 'Could not update listing', 'error');
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+}
+
+async function refreshRentalProfile() {
+  if (!connectedWallet) {
+    renderActiveRentals([], []);
+    renderLendingRentals([], []);
+    renderReceipts([]);
+    renderOwnerInventory([]);
+    renderNotifications([]);
+    return;
+  }
+  activeRentalsPanel.innerHTML = '<div class="empty-profile-card">Loading active rentals...</div>';
+  lendingRentalsPanel.innerHTML = '<div class="empty-profile-card">Loading lending sessions...</div>';
+  rentalReceiptsPanel.innerHTML = '<div class="empty-profile-card">Loading receipts...</div>';
+  try {
+    const timelineMode = connectedWalletSource === 'seeded_demo' ? '&timeline=seeded_demo' : '';
+    const res = await fetch(`/api/rentals/history?wallet=${encodeURIComponent(connectedWallet)}&limit=8${timelineMode}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Could not load rentals');
+    const settledRentalIds = new Set((data.receipts || []).map((receipt) => receipt.rentalId));
+    const localRentals = activeLocalRentalsForWallet(connectedWallet, settledRentalIds);
+    const remoteIds = new Set((data.activeRentals || []).map((rental) => rental.rentalId));
+    const remoteActiveRentals = data.activeRentals || [];
+    const borrowingRentals = [
+      ...remoteActiveRentals.filter((rental) => rental.renterWallet === connectedWallet),
+      ...localRentals.filter((rental) => !remoteIds.has(rental.rentalId)),
+    ];
+    const lendingRentals = remoteActiveRentals.filter((rental) => rental.ownerWallet === connectedWallet);
+    renderActiveRentals(borrowingRentals, data.cardReservations || []);
+    renderLendingRentals(lendingRentals, data.ownerCardReservations || []);
+    renderReceipts(data.receipts || []);
+    renderFunnelSummary(data.funnel, data.executionTraceStatus);
+    await refreshNotifications();
+    await refreshOwnerInventory();
+  } catch (error) {
+    console.error('Could not refresh rental profile', error);
+    const localRentals = activeLocalRentalsForWallet(connectedWallet);
+    renderActiveRentals(localRentals, []);
+    renderLendingRentals([], []);
+    rentalReceiptsPanel.innerHTML = `<div class="empty-profile-card">${escapeHtml(error instanceof Error ? error.message : 'Could not load receipts')}</div>`;
+    renderFunnelSummary(null);
+    await refreshNotifications();
+    await refreshOwnerInventory();
+  }
+}
+
+function openProfileSheet() {
+  if (!connectedWallet) {
+    requestPrivyAction('connect');
+    return;
+  }
+  itemSheet.classList.remove('open');
+  clearActiveSheetState();
+  profileSheet.classList.add('open');
+  sheetBackdrop.classList.add('open');
+  updateWalletUI();
+  refreshRentalProfile();
+}
+
+function closeProfileSheet() {
+  profileSheet.classList.remove('open');
+  if (!itemSheet.classList.contains('open')) sheetBackdrop.classList.remove('open');
+}
+
+function closeOpenSheets() {
+  closeSheet();
+  closeProfileSheet();
+}
+
+function persistActiveSheetState() {
+  try {
+    if (!activeSheetItem) {
+      window.localStorage.removeItem('gimi.activeSheetState');
+      return;
+    }
+    window.localStorage.setItem(
+      'gimi.activeSheetState',
+      JSON.stringify({ itemId: activeSheetItem.id, query: lastQuery, savedAt: Date.now() })
+    );
+  } catch (_) {}
+}
+
+function restoreActiveSheetState() {
+  try {
+    const raw = window.localStorage.getItem('gimi.activeSheetState');
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    const item = ITEMS.find((entry) => entry.id === parsed.itemId);
+    if (!item) return;
+    if (parsed.query) lastQuery = parsed.query;
+    openSheet(item);
+  } catch (_) {}
+}
+
+function clearActiveSheetState() {
+  try {
+    window.localStorage.removeItem('gimi.activeSheetState');
+  } catch (_) {}
+}
+
+function closePrivyRequest() {
+  // The active Privy controller lives in the parent Next page.
+}
+
+function requestPrivyAction(action) {
+  persistActiveSheetState();
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage(
+      {
+        type: action === 'send-transaction'
+          ? 'gimi:request-privy-transaction'
+          : 'gimi:request-privy-connect',
+      },
+      window.location.origin
+    );
+    return;
+  }
+
+  setSheetStatus('Wallet login requires the Gimi app shell at /', 'error');
+  updateCheckoutCTA();
+}
+
+function buildOwnerActionMessage(action, intentId, ownerWallet, issuedAt) {
+  return [
+    'Gimi owner action',
+    `Action: ${action}`,
+    `Intent: ${intentId}`,
+    `Owner: ${ownerWallet}`,
+    `Issued at: ${issuedAt}`,
+  ].join('\n');
+}
+
+function requestOwnerActionProof(action, intentId, ownerWallet) {
+  if (!window.parent || window.parent === window) {
+    return Promise.reject(new Error('Owner approval requires the Gimi app shell at /'));
+  }
+  if (pendingOwnerProof) return Promise.reject(new Error('Finish the current owner approval first'));
+  const message = buildOwnerActionMessage(action, intentId, ownerWallet, new Date().toISOString());
+  return new Promise((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      pendingOwnerProof = null;
+      reject(new Error('Owner approval timed out'));
+    }, 120000);
+    pendingOwnerProof = {
+      resolve: (proof) => {
+        window.clearTimeout(timeout);
+        pendingOwnerProof = null;
+        resolve(proof);
+      },
+      reject: (error) => {
+        window.clearTimeout(timeout);
+        pendingOwnerProof = null;
+        reject(error);
+      },
+    };
+    window.parent.postMessage(
+      { type: 'gimi:request-privy-message', message, requiredSigner: ownerWallet },
+      window.location.origin
+    );
+  });
+}
+
+function stashPreparedRental(prepared) {
+  try {
+    window.localStorage.setItem(
+      'gimi.pendingRentalStart',
+      JSON.stringify({
+        draftId: prepared.draftId,
+        itemId: prepared.itemId,
+        hours: prepared.hours,
+        prototypeItemId: activeSheetItem?.id || '',
+        renterWallet: prepared.renterWallet || connectedWallet,
+        savedAt: Date.now(),
+      })
+    );
+  } catch (_) {}
+}
+
+function readPendingRentalStart() {
+  try {
+    const raw = window.localStorage.getItem('gimi.pendingRentalStart');
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function clearPendingRentalStart() {
+  try {
+    window.localStorage.removeItem('gimi.pendingRentalStart');
+  } catch (_) {}
+}
+
+function stashPreparedSettlement(prepared) {
+  try {
+    window.localStorage.setItem(
+      PENDING_SETTLEMENT_KEY,
+      JSON.stringify({
+        kind: prepared.kind,
+        rentalId: prepared.rentalId,
+        itemId: prepared.itemId,
+        renterWallet: prepared.renterWallet,
+        ownerWallet: prepared.ownerWallet,
+        savedAt: Date.now(),
+      })
+    );
+  } catch (_) {}
+}
+
+function readPendingSettlement() {
+  try {
+    const raw = window.localStorage.getItem(PENDING_SETTLEMENT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function clearPendingSettlement() {
+  try {
+    window.localStorage.removeItem(PENDING_SETTLEMENT_KEY);
+  } catch (_) {}
+}
+
+function stashPreparedListing(prepared) {
+  try {
+    window.localStorage.setItem(
+      PENDING_LISTING_KEY,
+      JSON.stringify({
+        draftId: prepared.draftId,
+        listingPreview: prepared.listingPreview,
+        ownerWallet: prepared.ownerWallet,
+        savedAt: Date.now(),
+      })
+    );
+  } catch (_) {}
+}
+
+function readPendingListingPublish() {
+  try {
+    const raw = window.localStorage.getItem(PENDING_LISTING_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function clearPendingListingPublish() {
+  try {
+    window.localStorage.removeItem(PENDING_LISTING_KEY);
+  } catch (_) {}
+}
+
+function stashPreparedCardReceipt(prepared) {
+  try {
+    window.localStorage.setItem(
+      PENDING_CARD_RECEIPT_KEY,
+      JSON.stringify({
+        intentId: prepared.intentId,
+        rentalId: prepared.rentalId,
+        ownerWallet: prepared.ownerWallet,
+        savedAt: Date.now(),
+      })
+    );
+  } catch (_) {}
+}
+
+function readPendingCardReceipt() {
+  try {
+    const raw = window.localStorage.getItem(PENDING_CARD_RECEIPT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function clearPendingCardReceipt() {
+  try {
+    window.localStorage.removeItem(PENDING_CARD_RECEIPT_KEY);
+  } catch (_) {}
+}
+
+function pendingWalletAction() {
+  if (readPendingCardReceipt()) return 'card receipt';
+  if (readPendingSettlement()) return 'owner settlement';
+  if (readPendingListingPublish()) return 'item listing';
+  if (readPendingRentalStart()) return 'rental checkout';
+  return '';
+}
+
+function assertNoPendingWalletAction(nextAction) {
+  const pending = pendingWalletAction();
+  if (pending) throw new Error(`Finish the current ${pending} approval before starting ${nextAction}`);
+}
+
+function setSheetStatus(message, tone = 'muted') {
+  sheetCTASub.textContent = message;
+  sheetCTASub.style.color =
+    tone === 'error' ? '#ff8f8f' :
+    tone === 'success' ? '#9bf0c3' :
+    tone === 'pending' ? '#f4e08f' :
+    '';
+}
+
+function mappedRentalItemId(item) {
+  const itemId = ITEM_TO_RENTPROOF[item?.id];
+  if (!itemId) throw new Error('This item is not configured for rental');
+  return itemId;
+}
+
+function inferRequestedHours(query, item) {
+  const normalized = String(query || '').toLowerCase();
+  const dayMatch = normalized.match(/(\d+(?:\.\d+)?)\s*(d|day|days|天|日)/);
+  if (dayMatch) return Math.min(24 * 7, Math.max(1, Number(dayMatch[1]) * 24));
+  const match = normalized.match(/(\d+(?:\.\d+)?)\s*(h|hr|hour|hours|小時|小时)/);
+  if (match) return Number(match[1]);
+  return item?.id === 'lens-50' || item?.id === 'drone' ? 4 : 3;
+}
+
+function clampRentalHours(hours) {
+  if (!Number.isFinite(hours)) return 3;
+  return Math.min(24 * 7, Math.max(1, Math.round(hours * 4) / 4));
+}
+
+function itemHourlyEstimate(item) {
+  const dailyPrice = Number(item?.price || 0);
+  if (!Number.isFinite(dailyPrice) || dailyPrice <= 0) return 0;
+  return dailyPrice / 24;
+}
+
+function formatDuration(hours) {
+  if (hours >= 24 && hours % 24 === 0) return `${hours / 24}d`;
+  return `${hours}h`;
+}
+
+function updateDurationUI() {
+  const hours = clampRentalHours(selectedRentalHours);
+  selectedRentalHours = hours;
+  durationOptions?.querySelectorAll('.duration-option').forEach((button) => {
+    button.classList.toggle('is-selected', Number(button.dataset.hours) === hours);
+  });
+  const hourly = itemHourlyEstimate(activeSheetItem);
+  const estimated = hourly > 0 ? Math.max(hourly * hours, hourly).toFixed(2) : '0.00';
+  if (rentalLengthTotal) {
+    rentalLengthTotal.textContent = `${formatDuration(hours)} · ~$${estimated}`;
+  }
+}
+
+function updatePaymentUI() {
+  paymentOptions?.querySelectorAll('.payment-option').forEach((button) => {
+    button.classList.toggle('is-selected', button.dataset.paymentMethod === selectedPaymentMethod);
+  });
+}
+
+function updateCheckoutCTA() {
+  sheetCTA.disabled = false;
+  if (selectedPaymentMethod === 'card') {
+    sheetCTA.textContent = 'Pay and reserve';
+  } else if (connectedWallet) {
+    sheetCTA.textContent = `Pay with wallet · ${shortWallet(connectedWallet)}`;
+  } else {
+    sheetCTA.textContent = 'Connect Solana wallet';
+  }
+  sheetCTA.style.background = '';
+  if (activeSheetItem) {
+    const hours = clampRentalHours(selectedRentalHours);
+    const cardCopy = 'Pay by card now; Gimi writes the receipt on Solana after return.';
+    const walletCopy = connectedWallet
+      ? `Ready for ${formatDuration(hours)} Solana USDC escrow`
+      : `Connect wallet to rent for ${formatDuration(hours)} with USDC`;
+    setSheetStatus(
+      selectedPaymentMethod === 'card' ? cardCopy : walletCopy
+    );
+    updateDurationUI();
+    updatePaymentUI();
+  } else {
+    setSheetStatus(connectedWallet ? `Wallet connected · ${shortWallet(connectedWallet)}` : 'Choose card or Solana wallet at checkout');
+  }
+}
+
+function connectPrivyWallet() {
+  sheetCTA.textContent = 'Opening Privy...';
+  setSheetStatus('Waiting for wallet login...', 'pending');
+  requestPrivyAction('connect');
+  return '';
+}
+
+function isPrivyControllerMessage(event) {
+  if (event.origin !== window.location.origin) return false;
+  if (window.parent && window.parent !== window && event.source !== window.parent) return false;
+  return true;
+}
+
+window.addEventListener('message', async (event) => {
+  if (!isPrivyControllerMessage(event)) return;
+  if (event.data?.type === 'gimi:privy-status') {
+    setSheetStatus(String(event.data.message || 'Opening Privy...'), 'pending');
+    return;
+  }
+  if (event.data?.type === 'gimi:privy-wallet-connected') {
+    closePrivyRequest();
+    saveWalletSession(String(event.data.address || ''), 'privy');
+    setSheetStatus(`Wallet connected · ${shortWallet(connectedWallet)}`, 'success');
+    return;
+  }
+  if (event.data?.type === 'gimi:privy-message-signed') {
+    const resolver = pendingOwnerProof;
+    if (!resolver) return;
+    resolver.resolve({
+      address: String(event.data.address || ''),
+      message: String(event.data.message || ''),
+      signature: String(event.data.signature || ''),
+    });
+    return;
+  }
+  if (event.data?.type === 'gimi:card-checkout-complete') {
+    closePrivyRequest();
+    const intent = event.data.intent || {};
+    const authorization = event.data.authorization || {};
+    const card = authorization.card || {};
+    sheetCTA.textContent = 'Reserved';
+    setSheetStatus(
+      `${card.brand || 'Card'} •••• ${card.last4 || ''} authorized · ${shortWallet(intent.id || authorization.paymentIntentId || '')}`,
+      'success'
+    );
+    if (connectedWallet) await refreshRentalProfile();
+    return;
+  }
+  if (event.data?.type === 'gimi:card-checkout-unavailable') {
+    closePrivyRequest();
+    if (!activeSheetItem) return;
+    try {
+      await startMoonPayCardRentalIntent(activeSheetItem);
+    } catch (error) {
+      updateCheckoutCTA();
+      setSheetStatus(error instanceof Error ? error.message : 'Card checkout failed', 'error');
+    }
+    return;
+  }
+  if (event.data?.type === 'gimi:card-checkout-error') {
+    closePrivyRequest();
+    updateCheckoutCTA();
+    setSheetStatus(String(event.data.message || 'Card checkout cancelled'), 'error');
+    return;
+  }
+  if (event.data?.type === 'gimi:privy-wallet-error') {
+    closePrivyRequest();
+    const message = String(event.data.message || 'Wallet connection cancelled');
+    if (pendingOwnerProof) {
+      pendingOwnerProof.reject(new Error(message));
+      return;
+    }
+    if (readPendingListingPublish()) {
+      clearPendingListingPublish();
+      try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+      setProfileTab('listing');
+      setListingStatus(message, 'error');
+      if (listingSubmit) {
+        listingSubmit.disabled = false;
+        listingSubmit.textContent = 'Initialize item on devnet';
+      }
+      return;
+    }
+    if (readPendingSettlement()) {
+      clearPendingSettlement();
+      try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+      setLendingStatus(message, 'error');
+      await refreshRentalProfile();
+      return;
+    }
+    if (readPendingCardReceipt()) {
+      clearPendingCardReceipt();
+      try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+      setLendingStatus(message, 'error');
+      await refreshRentalProfile();
+      return;
+    }
+    if (readPendingRentalStart()) {
+      clearPendingRentalStart();
+      try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+    }
+    updateCheckoutCTA();
+    setSheetStatus(message, 'error');
+    return;
+  }
+  if (event.data?.type === 'gimi:privy-transaction-sent') {
+    closePrivyRequest();
+    const signature = String(event.data.signature || '');
+    if (!signature) {
+      updateCheckoutCTA();
+      setSheetStatus('Wallet returned without a transaction signature', 'error');
+      return;
+    }
+    if (readPendingSettlement()) {
+      await completePrivySettlementSignature(signature);
+      return;
+    }
+    if (readPendingCardReceipt()) {
+      await completePrivyCardReceiptSignature(signature);
+      return;
+    }
+    if (readPendingListingPublish()) {
+      await completePrivyListingSignature(signature);
+      return;
+    }
+    await completePrivyRentalSignature(signature);
+  }
+});
+
+async function prepareRentalCheckout(item, renterWallet, draftId) {
+  const itemId = mappedRentalItemId(item);
+  const hours = clampRentalHours(selectedRentalHours);
+  const res = await fetch('/api/solana-pay/start-rental', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itemId, renterWallet, hours, draftId }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const problems = Array.isArray(data?.problems) && data.problems.length
+      ? ` (${data.problems.join('; ')})`
+      : '';
+    throw new Error((data?.error || 'Could not prepare rental checkout') + problems);
+  }
+  return {
+    draftId: data.draftId,
+    itemId,
+    hours,
+    intentId: undefined,
+    transaction: data.transaction,
+    transactionMetadata: data.transactionMetadata || {},
+  };
+}
+
+async function createRentalIntent(item, paymentMethod, renterWallet) {
+  const itemId = mappedRentalItemId(item);
+  const hours = clampRentalHours(selectedRentalHours);
+  const res = await fetch('/api/rentals/intent', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      itemId,
+      hours,
+      paymentMethod,
+      renterWallet: renterWallet || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'Could not create rental intent');
+  return data;
+}
+
+async function startMoonPayCardRentalIntent(item) {
+  sheetCTA.textContent = 'Preparing card checkout...';
+  setSheetStatus('Creating rental intent for card payment...', 'pending');
+  const data = await createRentalIntent(item, 'card', connectedWallet || '');
+  const intent = data.intent || {};
+  const checkoutRes = await fetch('/api/payments/moonpay/checkout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ intentId: intent.id }),
+  });
+  const checkout = await checkoutRes.json();
+  if (!checkoutRes.ok) throw new Error(checkout?.error || 'Could not create MoonPay checkout');
+  if (checkout.checkoutUrl) {
+    sheetCTA.textContent = 'Open secure checkout';
+    setSheetStatus(`MoonPay checkout ready · ${shortWallet(checkout.providerPaymentId || intent.id || '')}`, 'success');
+    if (connectedWallet) await refreshRentalProfile();
+    window.location.href = checkout.checkoutUrl;
+    return;
+  }
+  sheetCTA.textContent = 'MoonPay setup needed';
+  setSheetStatus('Rental intent saved. Configure MoonPay Commerce checkout before accepting card payments.', 'pending');
+  if (connectedWallet) await refreshRentalProfile();
+}
+
+async function startCardRentalIntent(item) {
+  sheetCTA.disabled = true;
+  sheetCTA.textContent = 'Opening secure checkout...';
+  setSheetStatus('Signing in to authorize the refundable rental hold...', 'pending');
+  if (!window.parent || window.parent === window) {
+    await startMoonPayCardRentalIntent(item);
+    return;
+  }
+  window.parent.postMessage({
+    type: 'gimi:request-card-checkout',
+    itemId: mappedRentalItemId(item),
+    hours: clampRentalHours(selectedRentalHours),
+    renterWallet: connectedWallet || undefined,
+  }, window.location.origin);
+}
+
+async function recordRentalStart(prepared, signature) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const res = await fetch('/api/rentals/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        itemId: prepared.itemId,
+        rentalId: prepared.draftId,
+        intentId: prepared.intentId,
+        renterWallet: prepared.renterWallet || connectedWallet,
+        startSignature: signature,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) return data;
+    lastError = new Error(data?.error || 'Rental status sync failed');
+    await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+  }
+  throw lastError || new Error('Rental status sync failed');
+}
+
+function numberFromForm(formData, field) {
+  const value = Number(formData.get(field));
+  if (!Number.isFinite(value)) throw new Error(`${field} must be a number`);
+  return value;
+}
+
+function listingPayloadFromForm(form) {
+  const formData = new FormData(form);
+  const included = String(formData.get('included') || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return {
+    ownerWallet: connectedWallet,
+    name: String(formData.get('name') || '').trim(),
+    brand: String(formData.get('brand') || '').trim(),
+    model: String(formData.get('model') || '').trim(),
+    category: String(formData.get('category') || '').trim(),
+    condition: numberFromForm(formData, 'condition'),
+    description: String(formData.get('description') || '').trim(),
+    imageUrl: String(formData.get('imageUrl') || '').trim(),
+    locationLabel: String(formData.get('locationLabel') || '').trim(),
+    included,
+    ratePerHour: numberFromForm(formData, 'ratePerHour'),
+    minimumFee: numberFromForm(formData, 'minimumFee'),
+    buyoutCap: numberFromForm(formData, 'buyoutCap'),
+    autoBuyoutGraceSeconds: Math.round(numberFromForm(formData, 'autoBuyoutGraceSeconds')),
+  };
+}
+
+async function uploadListingPhoto(file) {
+  if (!connectedWallet) throw new Error('Connect a wallet before uploading a photo');
+  const formData = new FormData();
+  formData.append('ownerWallet', connectedWallet);
+  formData.append('photo', file);
+  const res = await fetch('/api/uploads/item-photo', {
+    method: 'POST',
+    body: formData,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'Could not upload photo');
+  return data.photo;
+}
+
+async function prepareListingPublish(form) {
+  const payload = listingPayloadFromForm(form);
+  const res = await fetch('/api/solana-pay/initialize-item', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'Could not prepare item initialization');
+  return {
+    ownerWallet: payload.ownerWallet,
+    draftId: data.draftId,
+    itemPda: data.itemPda,
+    transaction: data.transaction,
+    transactionMetadata: data.transactionMetadata || {},
+    listingPreview: data.listingPreview,
+  };
+}
+
+async function recordListingPublish(pending, signature) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const res = await fetch('/api/listings/publish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        draftId: pending.draftId,
+        initializeSignature: signature,
+        listingPreview: pending.listingPreview,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) return data;
+    lastError = new Error(data?.error || 'Listing publish sync failed');
+    await new Promise((resolve) => setTimeout(resolve, 1300 * (attempt + 1)));
+  }
+  throw lastError || new Error('Listing publish sync failed');
+}
+
+async function completePrivyListingSignature(signature) {
+  const pending = readPendingListingPublish();
+  if (!pending) return false;
+
+  setProfileTab('listing');
+  setListingStatus(`Tx ${shortWallet(signature)} sent. Verifying item PDA...`, 'pending');
+  if (listingSubmit) {
+    listingSubmit.disabled = true;
+    listingSubmit.textContent = 'Publishing listing...';
+  }
+  try {
+    const published = await recordListingPublish(pending, signature);
+    clearPendingListingPublish();
+    try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+    setListingStatus(`${published?.listing?.name || 'Item'} is live in inventory.`, 'success');
+    if (listingSubmit) {
+      listingSubmit.disabled = false;
+      listingSubmit.textContent = 'Initialize another item';
+    }
+    await refreshRentalProfile();
+    return true;
+  } catch (error) {
+    clearPendingListingPublish();
+    try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+    setListingStatus(error instanceof Error ? error.message : 'Listing publish failed', 'error');
+    if (listingSubmit) {
+      listingSubmit.disabled = false;
+      listingSubmit.textContent = 'Retry initialize item';
+    }
+    return true;
+  }
+}
+
+async function prepareOwnerSettlement(rental, kind) {
+  const endpoint = kind === 'buyout' ? '/api/solana-pay/auto-buyout' : '/api/solana-pay/confirm-return';
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      itemId: rental.itemId,
+      rentalId: rental.rentalId,
+      renterWallet: rental.renterWallet,
+      ownerWallet: rental.ownerWallet || connectedWallet,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const problems = Array.isArray(data?.problems) && data.problems.length
+      ? ` (${data.problems.join('; ')})`
+      : '';
+    throw new Error((data?.error || 'Could not prepare settlement transaction') + problems);
+  }
+  return {
+    kind,
+    itemId: rental.itemId,
+    rentalId: rental.rentalId,
+    renterWallet: rental.renterWallet,
+    ownerWallet: rental.ownerWallet || connectedWallet,
+    transaction: data.transaction,
+    transactionMetadata: data.transactionMetadata || {},
+  };
+}
+
+async function recordOwnerSettlement(prepared, signature) {
+  let lastError = null;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const res = await fetch('/api/rentals/settle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: prepared.kind,
+        itemId: prepared.itemId,
+        rentalId: prepared.rentalId,
+        renterWallet: prepared.renterWallet,
+        settlementSignature: signature,
+      }),
+    });
+    const data = await res.json();
+    if (res.ok) return data;
+    lastError = new Error(data?.error || 'Settlement status sync failed');
+    await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+  }
+  throw lastError || new Error('Settlement status sync failed');
+}
+
+async function startOwnerSettlement(rental, kind, button) {
+  assertNoPendingWalletAction('owner settlement');
+  if (!connectedWallet) {
+    requestPrivyAction('connect');
+    return;
+  }
+  if (!rental?.rentalId || !rental?.itemId || !rental?.renterWallet) {
+    throw new Error('Rental session is missing settlement metadata');
+  }
+  if (rental.ownerWallet && rental.ownerWallet !== connectedWallet) {
+    throw new Error(`Connect the owner wallet ${shortWallet(rental.ownerWallet)} to settle this rental`);
+  }
+
+  const originalText = button?.textContent || '';
+  const ownerCard = button?.closest('.active-rental-card');
+  if (button) {
+    button.disabled = true;
+    button.textContent = kind === 'buyout' ? 'Preparing buyout...' : 'Preparing return...';
+  }
+  ownerCard?.classList.add('is-settling');
+  setLendingStatus(
+    kind === 'buyout'
+      ? 'Preparing owner-signed auto-buyout transaction...'
+      : 'Preparing owner-signed confirm return transaction...',
+    'pending'
+  );
+
+  try {
+    const prepared = await prepareOwnerSettlement(rental, kind);
+    stashPreparedSettlement(prepared);
+    try {
+      window.localStorage.setItem(
+        'gimi.pendingPrivyTransaction',
+        JSON.stringify({
+          transactionBase64: prepared.transaction,
+          cluster: prepared.transactionMetadata?.cluster || 'solana:devnet',
+          requiredSigner: prepared.transactionMetadata?.requiredSigner || prepared.ownerWallet || connectedWallet,
+          action: 'owner-settlement',
+          kind,
+          rentalId: prepared.rentalId,
+          itemId: prepared.itemId,
+          createdAt: Date.now(),
+        })
+      );
+    } catch (_) {}
+    setLendingStatus(`Wallet approval required · signer ${shortWallet(prepared.ownerWallet || connectedWallet)}`, 'pending');
+    requestPrivyAction('send-transaction');
+  } catch (error) {
+    clearPendingSettlement();
+    try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+    setLendingStatus(error instanceof Error ? error.message : 'Could not prepare settlement transaction', 'error');
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+    ownerCard?.classList.remove('is-settling');
+  }
+}
+
+async function completePrivySettlementSignature(signature) {
+  const pending = readPendingSettlement();
+  if (!pending) return false;
+
+  setProfileTab('lending');
+  setLendingStatus(`Tx ${shortWallet(signature)} sent. Syncing settlement receipt...`, 'pending');
+  try {
+    await recordOwnerSettlement(pending, signature);
+    clearPendingSettlement();
+    try {
+      window.localStorage.removeItem('gimi.pendingPrivyTransaction');
+    } catch (_) {}
+    setLendingStatus(
+      pending.kind === 'buyout'
+        ? 'Auto-buyout settled. Receipt saved and item status updated.'
+        : 'Return confirmed. Listing is available again and renter receipt is saved.',
+      'success'
+    );
+    await refreshRentalProfile();
+    return true;
+  } catch (error) {
+    clearPendingSettlement();
+    try {
+      window.localStorage.removeItem('gimi.pendingPrivyTransaction');
+    } catch (_) {}
+    setLendingStatus(error instanceof Error ? error.message : 'Settlement sync failed', 'error');
+    await refreshRentalProfile();
+    return true;
+  }
+}
+
+async function markCardReservationHandedOff(reservation, button) {
+  if (!connectedWallet) {
+    requestPrivyAction('connect');
+    return;
+  }
+  if (!reservation?.id) throw new Error('Provider reservation is missing an intent id');
+  if (reservation.ownerWallet && reservation.ownerWallet !== connectedWallet) {
+    throw new Error(`Connect the owner wallet ${shortWallet(reservation.ownerWallet)} to activate this reservation`);
+  }
+
+  const originalText = button?.textContent || '';
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Activating...';
+  }
+  setLendingStatus('Marking provider-funded rental as handed off...', 'pending');
+
+  try {
+    const ownerProof = await requestOwnerActionProof('mark_handed_off', reservation.id, connectedWallet);
+    const res = await fetch('/api/rentals/intent/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        intentId: reservation.id,
+        ownerWallet: connectedWallet,
+        action: 'mark_handed_off',
+        ownerProof,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Could not activate provider reservation');
+    setLendingStatus('Provider-funded rental is active. Return settlement is the next step.', 'success');
+    await refreshRentalProfile();
+  } catch (error) {
+    setLendingStatus(error instanceof Error ? error.message : 'Could not activate provider reservation', 'error');
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+}
+
+async function confirmCardReservationReturn(reservation, button) {
+  if (!connectedWallet) {
+    requestPrivyAction('connect');
+    return;
+  }
+  if (!reservation?.id) throw new Error('Provider reservation is missing an intent id');
+  if (reservation.ownerWallet && reservation.ownerWallet !== connectedWallet) {
+    throw new Error(`Connect the owner wallet ${shortWallet(reservation.ownerWallet)} to settle this reservation`);
+  }
+
+  const originalText = button?.textContent || '';
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Settling...';
+  }
+  setLendingStatus('Recording provider return settlement ledger...', 'pending');
+
+  try {
+    const ownerProof = await requestOwnerActionProof('confirm_card_return', reservation.id, connectedWallet);
+    const res = await fetch('/api/rentals/intent/settle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        intentId: reservation.id,
+        ownerWallet: connectedWallet,
+        action: 'confirm_card_return',
+        ownerProof,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error || 'Could not settle provider return');
+    const settlement = data.settlement || {};
+    setLendingStatus(`Return recorded. Refund ${settlement.renterRefund || 0} saved to receipt history.`, 'success');
+    await refreshRentalProfile();
+  } catch (error) {
+    setLendingStatus(error instanceof Error ? error.message : 'Could not settle provider return', 'error');
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+}
+
+async function prepareCardReceipt(reservation) {
+  const res = await fetch('/api/solana-pay/card-receipt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      intentId: reservation.id,
+      ownerWallet: reservation.ownerWallet || connectedWallet,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'Could not prepare card receipt transaction');
+  return {
+    intentId: reservation.id,
+    rentalId: data.rentalId || reservation.rentalId || reservation.id,
+    ownerWallet: reservation.ownerWallet || connectedWallet,
+    transaction: data.transaction,
+    transactionMetadata: data.transactionMetadata || {},
+  };
+}
+
+async function recordCardReceipt(prepared, signature) {
+  const res = await fetch('/api/rentals/intent/receipt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      intentId: prepared.intentId,
+      ownerWallet: prepared.ownerWallet || connectedWallet,
+      receiptSignature: signature,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || 'Could not sync card receipt');
+  return data;
+}
+
+async function issueCardReservationReceipt(reservation, button) {
+  assertNoPendingWalletAction('card receipt');
+  if (!connectedWallet) {
+    requestPrivyAction('connect');
+    return;
+  }
+  if (!reservation?.id) throw new Error('Card reservation is missing an intent id');
+  if (reservation.ownerWallet && reservation.ownerWallet !== connectedWallet) {
+    throw new Error(`Connect the owner wallet ${shortWallet(reservation.ownerWallet)} to issue this receipt`);
+  }
+  if (reservation.sessionStatus !== 'returned') {
+    throw new Error('Confirm card return before issuing a Solana receipt');
+  }
+
+  const originalText = button?.textContent || '';
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Preparing receipt...';
+  }
+  setLendingStatus('Preparing owner-signed Solana receipt...', 'pending');
+
+  try {
+    const prepared = await prepareCardReceipt(reservation);
+    stashPreparedCardReceipt(prepared);
+    try {
+      window.localStorage.setItem(
+        'gimi.pendingPrivyTransaction',
+        JSON.stringify({
+          transactionBase64: prepared.transaction,
+          cluster: prepared.transactionMetadata?.cluster || 'solana:devnet',
+          requiredSigner: prepared.transactionMetadata?.requiredSigner || prepared.ownerWallet || connectedWallet,
+          action: 'card-receipt',
+          intentId: prepared.intentId,
+          rentalId: prepared.rentalId,
+          createdAt: Date.now(),
+        })
+      );
+    } catch (_) {}
+    setLendingStatus(`Wallet approval required · signer ${shortWallet(prepared.ownerWallet || connectedWallet)}`, 'pending');
+    requestPrivyAction('send-transaction');
+  } catch (error) {
+    clearPendingCardReceipt();
+    try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+    setLendingStatus(error instanceof Error ? error.message : 'Could not prepare Solana receipt', 'error');
+    if (button) {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  }
+}
+
+async function completePrivyCardReceiptSignature(signature) {
+  const pending = readPendingCardReceipt();
+  if (!pending) return false;
+
+  setProfileTab('lending');
+  setLendingStatus(`Tx ${shortWallet(signature)} sent. Syncing card receipt...`, 'pending');
+  try {
+    await recordCardReceipt(pending, signature);
+    clearPendingCardReceipt();
+    try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+    setLendingStatus('Solana receipt issued. It now appears in renter and owner history.', 'success');
+    await refreshRentalProfile();
+    return true;
+  } catch (error) {
+    clearPendingCardReceipt();
+    try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+    setLendingStatus(error instanceof Error ? error.message : 'Card receipt sync failed', 'error');
+    await refreshRentalProfile();
+    return true;
+  }
+}
+
+async function completePrivyRentalSignature(signature) {
+  const pending = readPendingRentalStart();
+  if (!pending) {
+    updateCheckoutCTA();
+    setSheetStatus(`Tx ${shortWallet(signature)} sent, but rental draft was missing`, 'error');
+    return;
+  }
+
+  saveWalletSession(String(pending.renterWallet || connectedWallet || ''), 'privy');
+
+  if (!activeSheetItem && pending.prototypeItemId) {
+    const item = ITEMS.find((entry) => entry.id === pending.prototypeItemId);
+    if (item) openSheet(item);
+  }
+
+  sheetCTA.textContent = 'Syncing rental receipt...';
+  setSheetStatus(`Tx ${shortWallet(signature)} sent. Confirming rental session...`, 'pending');
+
+  try {
+    const recorded = await recordRentalStart(pending, signature);
+    clearPendingRentalStart();
+    try {
+      window.localStorage.removeItem('gimi.pendingPrivyTransaction');
+    } catch (_) {}
+    writeLocalActiveRental({
+      rentalId: pending.draftId,
+      itemId: pending.itemId,
+      itemName: activeSheetItem?.name || recorded?.listing?.name || 'Rental item',
+      glyph: activeSheetItem?.glyph || glyphForItemId(pending.itemId),
+      pickupLocation: activeSheetItem?.owner ? `${activeSheetItem.owner} · ${activeSheetItem.dist}` : recorded?.listing?.locationLabel,
+      ownerName: activeSheetItem?.owner || recorded?.listing?.ownerName,
+      renterWallet: pending.renterWallet || connectedWallet,
+      ownerWalletShort: recorded?.rentalSession?.ownerWallet ? shortWallet(recorded.rentalSession.ownerWallet) : '',
+      dueTs: recorded?.rentalSession?.dueTs,
+      escrowAmount: recorded?.rentalSession?.escrowAmount,
+      expectedFeeAtStart: recorded?.rentalSession?.expectedFeeAtStart,
+      ratePerHour: recorded?.listing?.ratePerHour,
+      minimumFee: recorded?.listing?.minimumFee,
+      buyoutCap: recorded?.listing?.buyoutCap,
+      startTs: recorded?.rentalSession?.startTs || Math.floor(Date.now() / 1000),
+      startSignature: signature,
+      savedAt: Date.now(),
+    });
+    sheetCTA.textContent = 'Rental started ✓';
+    sheetCTA.style.background = '#6bd49b';
+    setSheetStatus(`Devnet tx ${shortWallet(signature)} confirmed · pickup details saved`, 'success');
+    setTimeout(openProfileSheet, 700);
+  } catch (error) {
+    sheetCTA.textContent = 'Checkout failed';
+    setSheetStatus(error instanceof Error ? error.message : 'Checkout failed', 'error');
+  }
+}
+
+/* tag-similarity: count shared tags, sort desc, drop the item itself */
+function getSimilar(item, count) {
+  const tags = new Set(item.tags);
+  return ITEMS
+    .filter(it => it.id !== item.id)
+    .map(it => ({ it, score: it.tags.filter(t => tags.has(t)).length }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count || 6)
+    .map(x => x.it);
+}
+
+function renderSimilar(item) {
+  const items = getSimilar(item, 6);
+  sheetSimilar.innerHTML = items.map(it => `
+    <div class="mini-card" data-id="${it.id}">
+      <div class="mini-photo-wrap">
+        <div class="mini-photo-glow" style="--h1:${it.hue}; --h2:${(it.hue + 40) % 360};"></div>
+        <div class="mini-photo-glyph">${it.glyph}</div>
+      </div>
+      <div class="mini-name">${it.name}</div>
+      <div class="mini-price">$${it.price}/day</div>
+    </div>
+  `).join('');
+}
+
+function openSheet(item) {
+  activeSheetItem = item;
+  selectedRentalHours = clampRentalHours(inferRequestedHours(lastQuery, item));
+  selectedPaymentMethod = 'card';
+  sheetHeroGlow.style.setProperty('--h1', item.hue);
+  sheetHeroGlow.style.setProperty('--h2', (item.hue + 40) % 360);
+  sheetHeroPhoto.textContent = item.glyph;
+  sheetName.textContent      = item.name;
+  sheetMeta.textContent      = `${item.owner} · ${item.dist}`;
+  sheetPrice.textContent     = `$${item.price}`;
+  renderSimilar(item);
+  updateDurationUI();
+  sheetContent.scrollTop = 0;
+  updateCheckoutCTA();
+  sheetBackdrop.classList.add('open');
+  itemSheet.classList.add('open');
+}
+function closeSheet() {
+  activeSheetItem = null;
+  clearActiveSheetState();
+  sheetBackdrop.classList.remove('open');
+  itemSheet.classList.remove('open');
+}
+
+// click delegation on the catalog
+catalogEl.addEventListener('click', (e) => {
+  const cell = e.target.closest('.specimen');
+  if (!cell) return;
+  const id = cell.dataset.id;
+  const item = ITEMS.find(it => it.id === id);
+  if (item) openSheet(item);
+});
+
+// click delegation on mini cards — swap sheet to that item
+sheetSimilar.addEventListener('click', (e) => {
+  const card = e.target.closest('.mini-card');
+  if (!card) return;
+  const id = card.dataset.id;
+  const item = ITEMS.find(it => it.id === id);
+  if (item) openSheet(item);
+});
+
+durationOptions?.addEventListener('click', (e) => {
+  const button = e.target.closest('.duration-option');
+  if (!button) return;
+  selectedRentalHours = clampRentalHours(Number(button.dataset.hours));
+  updateDurationUI();
+  updateCheckoutCTA();
+});
+paymentOptions?.addEventListener('click', (e) => {
+  const button = e.target.closest('.payment-option');
+  if (!button) return;
+  selectedPaymentMethod = button.dataset.paymentMethod || 'card';
+  updateCheckoutCTA();
+});
+
+sheetClose.addEventListener('click', closeSheet);
+profileClose.addEventListener('click', closeProfileSheet);
+sheetBackdrop.addEventListener('click', closeOpenSheets);
+profileTabs.forEach((button) => {
+  button.addEventListener('click', () => setProfileTab(button.dataset.profileTab));
+});
+listingPhotoFile?.addEventListener('change', async () => {
+  const file = listingPhotoFile.files?.[0];
+  if (!file) return;
+  try {
+    setListingStatus('Uploading item photo...', 'pending');
+    const photo = await uploadListingPhoto(file);
+    const imageUrlInput = document.getElementById('listingImageUrl');
+    if (imageUrlInput) imageUrlInput.value = photo.imageUrl;
+    setListingStatus('Photo uploaded. The image URL is ready for item initialization.', 'success');
+  } catch (error) {
+    setListingStatus(error instanceof Error ? error.message : 'Photo upload failed', 'error');
+    listingPhotoFile.value = '';
+  }
+});
+navWallet?.addEventListener('click', () => {
+  if (connectedWallet) {
+    openProfileSheet();
+    return;
+  }
+  requestPrivyAction('connect');
+});
+sheetCTA.addEventListener('click', async (event) => {
+  try {
+    if (!activeSheetItem) return;
+    event.preventDefault();
+
+    if (selectedPaymentMethod === 'card') {
+      await startCardRentalIntent(activeSheetItem);
+      return;
+    }
+
+    if (!connectedWallet) {
+      sheetCTA.textContent = 'Opening Privy...';
+      setSheetStatus('Waiting for wallet login...', 'pending');
+      requestPrivyAction('connect');
+      return;
+    }
+
+    assertNoPendingWalletAction('rental checkout');
+
+    const intentData = await createRentalIntent(activeSheetItem, 'solana_wallet', connectedWallet);
+    sheetCTA.textContent = 'Preparing checkout...';
+    setSheetStatus('Building serialized Solana devnet transaction...', 'pending');
+    const prepared = await prepareRentalCheckout(activeSheetItem, connectedWallet, intentData?.intent?.rentalId);
+    prepared.intentId = intentData?.intent?.id;
+
+    if (connectedWalletSource !== 'privy') {
+      throw new Error('This demo checkout currently signs through Privy only');
+    }
+
+    sheetCTA.textContent = 'Opening wallet approval...';
+    setSheetStatus(
+      `Devnet tx ready · ${String(prepared.transaction || '').length} chars · signer ${shortWallet(connectedWallet)}`,
+      'pending'
+    );
+    stashPreparedRental(prepared);
+    try {
+      window.localStorage.setItem(
+        'gimi.pendingPrivyTransaction',
+        JSON.stringify({
+          transactionBase64: prepared.transaction,
+          cluster: prepared.transactionMetadata?.cluster || 'solana:devnet',
+          requiredSigner: prepared.transactionMetadata?.requiredSigner || connectedWallet,
+          draftId: prepared.draftId,
+          itemId: prepared.itemId,
+          createdAt: Date.now(),
+        })
+      );
+    } catch (_) {}
+    requestPrivyAction('send-transaction');
+    return;
+  } catch (error) {
+    sheetCTA.textContent = 'Checkout failed';
+    setSheetStatus(error instanceof Error ? error.message : 'Checkout failed', 'error');
+    setTimeout(updateCheckoutCTA, 2200);
+  }
+});
+listingForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  let startedListingFlow = false;
+  try {
+    if (!connectedWallet) {
+      setListingStatus('Connect a wallet before listing an item.', 'pending');
+      requestPrivyAction('connect');
+      return;
+    }
+    assertNoPendingWalletAction('item listing');
+
+    listingSubmit.disabled = true;
+    listingSubmit.textContent = 'Preparing initialize_item...';
+    setListingStatus('Building owner-signed Solana devnet transaction...', 'pending');
+    const prepared = await prepareListingPublish(listingForm);
+
+    stashPreparedListing(prepared);
+    startedListingFlow = true;
+    try {
+      window.localStorage.setItem(
+        'gimi.pendingPrivyTransaction',
+        JSON.stringify({
+          transactionBase64: prepared.transaction,
+          cluster: prepared.transactionMetadata?.cluster || 'solana:devnet',
+          requiredSigner: prepared.transactionMetadata?.requiredSigner || connectedWallet,
+          action: 'owner-listing',
+          draftId: prepared.draftId,
+          itemPda: prepared.itemPda,
+          createdAt: Date.now(),
+        })
+      );
+    } catch (_) {}
+
+    listingSubmit.textContent = 'Opening wallet approval...';
+    setListingStatus(`Devnet initialize_item ready · signer ${shortWallet(connectedWallet)}`, 'pending');
+    requestPrivyAction('send-transaction');
+  } catch (error) {
+    if (startedListingFlow) {
+      clearPendingListingPublish();
+      try { window.localStorage.removeItem('gimi.pendingPrivyTransaction'); } catch (_) {}
+    }
+    setListingStatus(error instanceof Error ? error.message : 'Could not start listing', 'error');
+    if (listingSubmit) {
+      listingSubmit.disabled = false;
+      listingSubmit.textContent = 'Initialize item on devnet';
+    }
+  }
+});
+ownerInventoryPanel?.addEventListener('click', async (event) => {
+  const button = event.target.closest('.owner-inventory-toggle-btn');
+  if (!button) return;
+  const listingId = button.dataset.listingId || '';
+  const nextStatus = button.dataset.nextStatus || '';
+  try {
+    await updateOwnerListingStatus(listingId, nextStatus, button);
+  } catch (error) {
+    setListingStatus(error instanceof Error ? error.message : 'Could not update listing', 'error');
+  }
+});
+lendingRentalsPanel?.addEventListener('click', async (event) => {
+  const receiptButton = event.target.closest('.card-receipt-btn');
+  if (receiptButton) {
+    const intentId = receiptButton.dataset.intentId || '';
+    const reservation = latestOwnerCardReservations.find((entry) => entry.id === intentId);
+    try {
+      await issueCardReservationReceipt(reservation, receiptButton);
+    } catch (error) {
+      setLendingStatus(error instanceof Error ? error.message : 'Card receipt issuance failed', 'error');
+    }
+    return;
+  }
+  const returnButton = event.target.closest('.card-return-btn');
+  if (returnButton) {
+    const intentId = returnButton.dataset.intentId || '';
+    const reservation = latestOwnerCardReservations.find((entry) => entry.id === intentId);
+    try {
+      await confirmCardReservationReturn(reservation, returnButton);
+    } catch (error) {
+      setLendingStatus(error instanceof Error ? error.message : 'Card return settlement failed', 'error');
+    }
+    return;
+  }
+  const handoffButton = event.target.closest('.card-handoff-btn');
+  if (handoffButton) {
+    const intentId = handoffButton.dataset.intentId || '';
+    const reservation = latestOwnerCardReservations.find((entry) => entry.id === intentId);
+    try {
+      await markCardReservationHandedOff(reservation, handoffButton);
+    } catch (error) {
+      setLendingStatus(error instanceof Error ? error.message : 'Card handoff failed', 'error');
+    }
+    return;
+  }
+  const button = event.target.closest('.owner-settle-btn');
+  if (!button) return;
+  const rentalId = button.dataset.rentalId || '';
+  const rental = latestLendingRentals.find((entry) => entry.rentalId === rentalId);
+  try {
+    await startOwnerSettlement(rental, button.dataset.kind === 'buyout' ? 'buyout' : 'return', button);
+  } catch (error) {
+    setLendingStatus(error instanceof Error ? error.message : 'Settlement failed', 'error');
+  }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && itemSheet.classList.contains('open')) closeSheet();
+});
+
+
+lastQuery = 'Camping gear for two';
+if (new URLSearchParams(window.location.search).get('demo') === 'partner') {
+  connectedWallet = '5pNLovuXAbyKM8UGDKZg9Qqe85Sqt1kMPNaippombvwC';
+  connectedWalletSource = 'seeded_demo';
+  updateWalletUI();
+} else {
+  hydrateWalletSession();
+}
+restoreActiveSheetState();
+setTimeout(() => { if (cur === 'idle') ask('Camping gear for two'); }, 1600);
+
+</script>
+</body>
+</html>

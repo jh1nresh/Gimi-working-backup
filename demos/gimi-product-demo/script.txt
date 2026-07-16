@@ -1,0 +1,23 @@
+Gimi is an agentic rental marketplace for the real world.
+
+Instead of buying something you only need for a few hours, you ask Gimi.
+
+Here, I need a camera kit near campus for four hours. The agent searches nearby community inventory, understands time and location, then opens the best rental checkout.
+
+The important part is that checkout is not just a chat response. Gimi prepares the rental terms: pickup location, due time, hourly rent, escrow cap, and refund estimate.
+
+The renter connects a wallet with Privy, approves the devnet transaction, and the rental session starts on Solana. Funds are held in escrow. Rent accrues over time inside the session, but the host does not need to trust an off-platform promise.
+
+Now switch to the owner side. In the profile, the same wallet can see Borrowing now and Lending now. A host sees who rented the item, where pickup happens, when it is due, how much escrow is locked, and how much rent has accrued.
+
+When the item comes back, the owner clicks Confirm return. That creates an owner-signed confirm_return transaction. The program settles accrued rent to the host and platform, refunds the renter, closes the rental token state, and writes a receipt.
+
+If the item never comes back, the owner has Auto-buyout after the grace period. That path claims the escrow and closes the session.
+
+Gimi also supports the other half of the loop: listing inventory. The owner opens List item, enters the item details, price, pickup point, included accessories, and escrow cap. Gimi prepares an initialize_item transaction. After the owner signs, the app verifies the item account and publishes it into renter inventory.
+
+So the MVP is a complete agentic rental loop: ask for an item, get a recommended rental, sign checkout, track the active session, confirm return, persist receipts, and build reputation from real outcomes.
+
+ElevenLabs adds the voice layer. A renter can speak naturally, like: I need a power bank near the library for three hours. Gimi turns that into a product search and checkout flow. The agent helps users understand the action, but the wallet still controls every transaction.
+
+Gimi turns local inventory into trusted, on-chain, agent-assisted commerce.
