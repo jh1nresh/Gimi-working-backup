@@ -1,0 +1,321 @@
+name: Isolated repair full configured verification
+on:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: isolated-repair-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify frozen inputs, audit with narrow network access, and run application checks offline
+        run: |
+          python3 -I - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import signal
+          import stat
+          import subprocess
+
+          IMAGE = 'node@sha256:9f0dde62d10e7ff7a310ecaebd66225f6b46c17e6cb778449a77b05d3541bea2'
+          PINS = {
+              'package.json': 'd8fb7dc46a118e6799d5b95a52af2db3d339745cc1d24430e73cfd1b4fccdffe',
+              'package-lock.json': 'fbbce7272b63b6abd05a5d5ed5e8c6d92004d3022ef753a99a26dbfa4937e98f',
+              'scripts/check-runtime-audit.mjs': 'f2eddf1d2eac13a30a4a1f921fe43b6f9964a2d64a7de678c569898c55ab13ed',
+              '.github/scripts/check-ci-boundary.cjs': '1352770b9c1efb4df8fa02fc082833aea801c05630a896eef3384a7a1a801146',
+          }
+          EXCLUDED = {'.git', '.env', '.npmrc', '.yarnrc', '.yarnrc.yml', '.vercel',
+                      '.ssh', '.aws', '.rentproof', '.next', 'node_modules', 'target'}
+          KEY_SUFFIXES = ('.pem', '.key', '.p12', '.pfx', '.keystore')
+          MARKER = b"global.o='" + b"5-852-" + b"du';"
+          APP_COMMAND = ('node .github/scripts/check-ci-boundary.cjs && '
+                         'npm --ignore-scripts run typecheck && npm --ignore-scripts test && '
+                         'npm --ignore-scripts run lint && npm --ignore-scripts run build')
+
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+
+          def excluded(name):
+              lower = name.lower()
+              return (lower in EXCLUDED or lower.startswith('.env') or
+                      lower.startswith('id_rsa') or lower.startswith('id_ed25519') or
+                      lower.endswith(KEY_SUFFIXES) or
+                      (lower.endswith('.json') and any(x in lower for x in ('keypair', 'wallet', 'payer', 'secret'))))
+
+          def executable_marker(data):
+              # A small lexical filter for this incident's appended JS statements.
+              # Skip quoted/comment fixture text; template interpolation is not parsed.
+              # This targets known appended statements, not arbitrary JS malware.
+              i = 0
+              while i < len(data):
+                  if data.startswith(b'//', i):
+                      end = data.find(b'\n', i + 2)
+                      i = len(data) if end < 0 else end + 1
+                  elif data.startswith(b'/*', i):
+                      end = data.find(b'*/', i + 2)
+                      i = len(data) if end < 0 else end + 2
+                  elif data[i] in (34, 39, 96):
+                      quote = data[i]
+                      i += 1
+                      while i < len(data):
+                          if data[i] == 92:
+                              i += 2
+                          elif data[i] == quote:
+                              i += 1
+                              break
+                          else:
+                              i += 1
+                  elif data.startswith(MARKER, i) or data.startswith(b'eval("' + MARKER + b'"+atob(', i):
+                      return True
+                  else:
+                      i += 1
+              return False
+
+          def validate_source(root):
+              require(root.is_dir() and root != Path('/'), 'Invalid source root')
+              total = 0
+              for directory, dirs, files in os.walk(root, followlinks=False):
+                  dirs[:] = [name for name in dirs if not excluded(name)]
+                  for name in dirs + files:
+                      if excluded(name):
+                          continue
+                      path = Path(directory) / name
+                      mode = path.lstat().st_mode
+                      require(not stat.S_ISLNK(mode), 'Symlink source rejected: ' + str(path.relative_to(root)))
+                      if name in dirs:
+                          require(stat.S_ISDIR(mode), 'Non-directory source ancestor')
+                          continue
+                      require(stat.S_ISREG(mode), 'Nonregular source rejected')
+                      size = path.stat().st_size
+                      require(size <= 64 * 1024 * 1024, 'Oversized source file')
+                      total += size
+                      require(total <= 512 * 1024 * 1024, 'Source copy exceeds bound')
+                      if path.suffix.lower() in {'.js', '.cjs', '.mjs', '.jsx', '.ts', '.tsx', '.mts', '.cts'}:
+                          require(not executable_marker(path.read_bytes()),
+                                  'Executable incident loader in ' + str(path.relative_to(root)))
+              for relative, expected in PINS.items():
+                  path = root / relative
+                  require(path.is_file() and not path.is_symlink(), 'Missing frozen CI input: ' + relative)
+                  require(hashlib.sha256(path.read_bytes()).hexdigest() == expected,
+                          'Frozen CI input drift: ' + relative)
+              print('Source-as-data incident predicate and four frozen input hashes passed', flush=True)
+
+          COPY_PROGRAM = r'''
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          const pins = JSON.parse(process.argv[1]);
+          const excluded = new Set(['.git','.env','.npmrc','.yarnrc','.yarnrc.yml','.vercel','.ssh','.aws','.rentproof','.next','node_modules','target']);
+          function skip(name) {
+            const n = name.toLowerCase();
+            return excluded.has(n) || n.startsWith('.env') || n.startsWith('id_rsa') || n.startsWith('id_ed25519') ||
+              /\.(pem|key|p12|pfx|keystore)$/.test(n) || (/\.json$/.test(n) && /(keypair|wallet|payer|secret)/.test(n));
+          }
+          let total = 0;
+          function own(p) { fs.chownSync(p,1000,1000); }
+          function copy(src,dst) {
+            const s = fs.lstatSync(src);
+            if (s.isSymbolicLink()) throw Error('Symlink in source copy');
+            if (s.isDirectory()) {
+              fs.mkdirSync(dst,{recursive:true});
+              for (const name of fs.readdirSync(src)) if (!skip(name)) copy(path.join(src,name),path.join(dst,name));
+              own(dst);
+            } else if (s.isFile()) {
+              total += s.size;
+              if (s.size > 64*1024*1024 || total > 512*1024*1024) throw Error('Source copy exceeds bound');
+              fs.copyFileSync(src,dst); fs.chmodSync(dst,s.mode & 0o777); own(dst);
+            } else throw Error('Nonregular source copy');
+          }
+          copy('/source','/work');
+          fs.mkdirSync('/audit/work',{recursive:true});
+          for (const relative of ['package.json','package-lock.json','scripts/check-runtime-audit.mjs']) {
+            const src = path.join('/source',relative);
+            if (!fs.lstatSync(src).isFile() || fs.lstatSync(src).isSymbolicLink()) throw Error('Invalid audit input');
+            const data = fs.readFileSync(src);
+            if (crypto.createHash('sha256').update(data).digest('hex') !== pins[relative]) throw Error('Audit input hash drift');
+            const dst = relative.startsWith('scripts/') ? '/audit/check-runtime-audit.mjs' : path.join('/audit/work',relative);
+            fs.writeFileSync(dst,data,{mode:0o444}); own(dst);
+          }
+          own('/audit/work'); own('/audit');
+          console.log('Filtered source copied; narrow audit volume contains only three frozen inputs');
+          '''
+
+          class Docker:
+              def __init__(self, root, label):
+                  self.root, self.label = root, label
+                  self.prefix = 'gimi-incident-' + label
+                  self.volumes = [self.prefix + '-work', self.prefix + '-audit']
+                  self.names = {stage: self.prefix + '-' + stage for stage in ('init', 'install', 'audit-check', 'app-check')}
+                  self.intents = {}
+                  self.creation_attempted = False
+
+              def call(self, *args, capture=False, timeout=90):
+                  result = subprocess.run(args, check=True, text=True, timeout=timeout,
+                                          stdout=subprocess.PIPE if capture else None)
+                  return result.stdout.strip() if capture else None
+
+              def lookup(self, kind, name):
+                  if kind == 'container':
+                      rows = self.call('docker','container','ls','-aq','--no-trunc','--filter',
+                                       'name=^/' + re.escape(name) + '$', capture=True).splitlines()
+                      if not rows:
+                          return None
+                      require(len(rows) == 1, 'Ambiguous container identity')
+                      items = json.loads(self.call('docker','container','inspect',rows[0],capture=True))
+                      require(len(items) == 1 and items[0]['Name'] == '/' + name, 'Container name mismatch')
+                  else:
+                      rows = self.call('docker','volume','ls','--format','{{.Name}}','--filter','name=' + name,
+                                       capture=True).splitlines()
+                      if name not in rows:
+                          return None
+                      items = json.loads(self.call('docker','volume','inspect',name,capture=True))
+                      require(len(items) == 1 and items[0]['Name'] == name, 'Volume name mismatch')
+                  return items[0]
+
+              def owned(self, kind, item):
+                  labels = item.get('Labels', {}) if kind == 'volume' else item['Config'].get('Labels', {})
+                  require((labels or {}).get('codex.incident.run') == self.label, 'Resource ownership label mismatch')
+
+              def preflight(self):
+                  for kind, names in [('volume', self.volumes), ('container', self.names.values())]:
+                      for name in names:
+                          require(self.lookup(kind, name) is None, 'Refusing preexisting resource name')
+
+              def volume(self, name):
+                  self.intents[('volume',name)] = True  # Uncertain BEFORE the mutating call.
+                  self.creation_attempted = True
+                  actual = self.call('docker','volume','create','--label','codex.incident.run=' + self.label,
+                                     name,capture=True)
+                  require(actual == name, 'Volume creation identity mismatch')
+                  item = self.lookup('volume',name)
+                  require(item is not None, 'Created volume not visible')
+                  self.owned('volume',item)
+                  self.intents[('volume',name)] = False
+
+              def container(self, stage, options, command, timeout, report_exit=False):
+                  name = self.names[stage]
+                  self.intents[('container',name)] = True  # Record uncertain creation first.
+                  self.creation_attempted = True
+                  self.call('docker','create','--name',name,'--label','codex.incident.run=' + self.label,
+                            *options,IMAGE,*command,capture=True)
+                  item = self.lookup('container',name)
+                  require(item is not None, 'Created container not visible')
+                  self.owned('container',item)
+                  self.intents[('container',name)] = False
+                  start_error = None
+                  try:
+                      self.call('docker','start','--attach',name,timeout=timeout)
+                  except subprocess.CalledProcessError as error:
+                      start_error = error
+                  item = self.lookup('container',name)
+                  require(item is not None, 'Container outcome missing')
+                  self.owned('container',item)
+                  require(not item['State']['Running'] and item['State']['Status'] == 'exited',
+                          'Container remained active or did not establish an exited outcome')
+                  exit_code = item['State']['ExitCode']
+                  if start_error is not None and exit_code == 0:
+                      raise start_error  # A CLI/API failure is not a successful container outcome.
+                  require(report_exit or exit_code == 0, 'Container check failed')
+                  self.call('docker','rm',item['Id'])
+                  require(self.lookup('container',name) is None, 'Removed container remains')
+                  del self.intents[('container',name)]
+                  return exit_code
+
+              def cleanup(self):
+                  errors = []
+                  for kind in ('container','volume'):
+                      for (resource_kind,name), uncertain in list(reversed(self.intents.items())):
+                          if resource_kind != kind:
+                              continue
+                          try:
+                              item = self.lookup(kind,name)
+                              if item is None:
+                                  require(not uncertain, 'Creation outcome unverified for ' + name)
+                              else:
+                                  self.owned(kind,item)
+                                  if kind == 'container':
+                                      if item['State']['Running']:
+                                          self.call('docker','stop','--time','10',item['Id'],timeout=30)
+                                          stopped = self.lookup(kind,name)
+                                          require(stopped is not None, 'Stopped container identity missing')
+                                          self.owned(kind,stopped)
+                                          require(stopped['Id'] == item['Id'] and not stopped['State']['Running'],
+                                                  'Owned container still running or replaced')
+                                      self.call('docker','rm',item['Id'])
+                                  else:
+                                      self.call('docker','volume','rm',name)
+                                  require(self.lookup(kind,name) is None, 'Resource remains after removal')
+                              del self.intents[(kind,name)]
+                          except BaseException as error:
+                              errors.append(kind + ':' + name + ':' + type(error).__name__ + ':' + str(error))
+                  return errors
+
+              def execute(self):
+                  self.preflight()
+                  self.call('docker','pull',IMAGE,timeout=180)
+                  for name in self.volumes:
+                      self.volume(name)
+                  work, audit = self.volumes
+                  common = ['--read-only','--cap-drop','ALL','--security-opt','no-new-privileges',
+                            '--pids-limit','256','--memory','3g','--cpus','2',
+                            '--tmpfs','/tmp:rw,nosuid,nodev,size=512m']
+                  env = ['--env','HOME=/tmp','--env','CI=true','--env','NEXT_TELEMETRY_DISABLED=1',
+                         '--env','NPM_CONFIG_CACHE=/tmp/npm','--env','NPM_CONFIG_USERCONFIG=/dev/null',
+                         '--env','NPM_CONFIG_REGISTRY=https://registry.npmjs.org']
+                  self.container('init', [*common,'--network','none','--cap-add','CHOWN',
+                                 '--mount','type=bind,src=' + str(self.root) + ',dst=/source,readonly',
+                                 '--mount','type=volume,src=' + work + ',dst=/work',
+                                 '--mount','type=volume,src=' + audit + ',dst=/audit'],
+                                 ['node','--input-type=commonjs','-e',COPY_PROGRAM,json.dumps(PINS)],90)
+                  unprivileged = [*common,'--user','1000:1000',*env]
+                  self.container('install', [*unprivileged,'--mount','type=volume,src=' + work + ',dst=/work',
+                                            '--workdir','/work'],
+                                 ['npm','ci','--ignore-scripts','--no-audit','--fund=false'],600)
+                  # Only the unchanged builtin-only wrapper and frozen manifests have network access here.
+                  # No npm run PATH injection, mutable package script, app source or node_modules mount.
+                  audit_exit = self.container('audit-check', [*unprivileged,'--mount',
+                                 'type=volume,src=' + audit + ',dst=/audit,readonly','--workdir','/audit/work'],
+                                 ['node','/audit/check-runtime-audit.mjs'],180,report_exit=True)
+                  print('Unchanged runtime audit exit status:',audit_exit,flush=True)
+                  self.container('app-check', [*unprivileged,'--network','none','--mount',
+                                 'type=volume,src=' + work + ',dst=/work','--workdir','/work'],
+                                 ['sh','-ec',APP_COMMAND],900)
+                  require(audit_exit == 0, 'Runtime audit failed; offline application checks completed but CI must fail')
+
+          def interrupted(signum, frame):
+              raise SystemExit(128 + signum)
+
+          def main():
+              signal.signal(signal.SIGTERM, interrupted)
+              run_id, attempt = os.environ['GITHUB_RUN_ID'], os.environ['GITHUB_RUN_ATTEMPT']
+              require(re.fullmatch(r'[0-9]{1,20}',run_id) and re.fullmatch(r'[0-9]{1,6}',attempt), 'Invalid owner')
+              root = Path(os.environ['GITHUB_WORKSPACE']).resolve()
+              require('\n' not in str(root) and ',' not in str(root), 'Invalid bind source')
+              validate_source(root)
+              docker = Docker(root,run_id + '-' + attempt)
+              try:
+                  docker.execute()
+              finally:
+                  errors = docker.cleanup()
+                  if errors:
+                      raise RuntimeError('Owned CI closeout failed: ' + json.dumps(errors))
+                  if docker.creation_attempted:
+                      print('Owned containers and both volumes verified absent; CI closeout completed',flush=True)
+                  else:
+                      print('No container or volume creation was attempted; verified resource absence and closeout are not claimed',flush=True)
+              print('Full configured audit/typecheck/test/lint/build verification passed',flush=True)
+
+          if __name__ == '__main__':
+              main()
+          PY
