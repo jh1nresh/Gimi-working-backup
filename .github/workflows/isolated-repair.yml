@@ -134,7 +134,8 @@ jobs:
             } else if (s.isFile()) {
               total += s.size;
               if (s.size > 64*1024*1024 || total > 512*1024*1024) throw Error('Source copy exceeds bound');
-              fs.copyFileSync(src,dst); fs.chmodSync(dst,s.mode & 0o777); own(dst);
+              fs.writeFileSync(dst,fs.readFileSync(src),{flag:'wx',mode:s.mode & 0o777});
+              fs.chmodSync(dst,s.mode & 0o777); own(dst);
             } else throw Error('Nonregular source copy');
           }
           copy('/source','/work');
