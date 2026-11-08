@@ -1,6 +1,6 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const net = require('node:net');
+const assert = process.getBuiltinModule('node:assert/strict');
+const fs = process.getBuiltinModule('node:fs');
+const net = process.getBuiltinModule('node:net');
 assert.equal(process.getuid(), 1000);
 assert.equal(fs.existsSync('/source'), false, 'execution must not mount host checkout');
 assert.equal(fs.existsSync('/var/run/docker.sock'), false, 'execution must not mount Docker socket');
